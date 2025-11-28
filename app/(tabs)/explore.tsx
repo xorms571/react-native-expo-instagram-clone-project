@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { Platform, StyleSheet, Button } from 'react-native';
 
 import { Collapsible } from '@/components/ui/collapsible';
 import { ExternalLink } from '@/components/external-link';
@@ -8,8 +8,16 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Fonts } from '@/constants/theme';
+import { supabase } from '@/utils/supabase'; // Import supabase
+import { useAuth } from '@/providers/AuthProvider'; // Import useAuth
 
 export default function TabTwoScreen() {
+  const { session } = useAuth(); // Get session to potentially show user info
+
+  async function signOut() {
+    await supabase.auth.signOut();
+  }
+
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
@@ -29,6 +37,9 @@ export default function TabTwoScreen() {
           }}>
           Explore
         </ThemedText>
+        {session && (
+          <Button title="Logout" onPress={signOut} />
+        )}
       </ThemedView>
       <ThemedText>This app includes example code to help you get started.</ThemedText>
       <Collapsible title="File-based routing">
@@ -108,5 +119,7 @@ const styles = StyleSheet.create({
   titleContainer: {
     flexDirection: 'row',
     gap: 8,
+    alignItems: 'center', // Align items for button
+    justifyContent: 'space-between', // Space out title and button
   },
 });
