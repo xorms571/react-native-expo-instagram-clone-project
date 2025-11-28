@@ -1,5 +1,5 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
+import { router, SplashScreen, Stack, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
@@ -17,7 +17,6 @@ SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
   const { session, loading } = useAuth();
-  const router = useRouter();
   const segments = useSegments();
   const colorScheme = useColorScheme();
 

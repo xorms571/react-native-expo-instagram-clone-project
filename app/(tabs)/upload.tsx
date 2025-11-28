@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, Text, TextInput, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import { Image } from 'expo-image';
-import { supabase } from '@/utils/supabase';
 import { useAuth } from '@/providers/AuthProvider'; // Import useAuth
+import { supabase } from '@/utils/supabase';
+import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
+import { router } from 'expo-router';
+import React, { useState } from 'react';
+import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import 'react-native-get-random-values'; // Required for uuid to work with React Native
 import { v4 as uuidv4 } from 'uuid'; // For generating unique filenames
-import { Ionicons } from '@expo/vector-icons';
 
 
 export default function UploadScreen() {
@@ -82,6 +83,7 @@ export default function UploadScreen() {
       Alert.alert('Success', 'Post uploaded successfully!');
       setImageUri(null);
       setCaption('');
+      router.push(`/(tabs)`)
     } catch (error: any) {
       console.error('Error uploading post:', error);
       Alert.alert('Error', error.message);

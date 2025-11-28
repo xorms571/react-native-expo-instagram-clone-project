@@ -1,5 +1,5 @@
 import { supabase } from '@/utils/supabase';
-import { Link, useRouter } from 'expo-router';
+import { Link, router } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
@@ -9,7 +9,6 @@ export default function SignUpScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   async function signUpWithEmail() {
     if (password !== confirmPassword) {
