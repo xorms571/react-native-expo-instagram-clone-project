@@ -1,10 +1,12 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
+import { TouchableOpacity } from 'react-native';
 
 import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { supabase } from '@/utils/supabase';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -26,7 +28,7 @@ export default function TabLayout() {
             fontSize: 24,
           },
           headerTitleAlign: 'center',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          tabBarIcon: ({ color }) => <Ionicons size={28} name="home-outline" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -34,15 +36,25 @@ export default function TabLayout() {
         options={{
           title: 'Upload',
           headerShown: false,
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="camera.fill" color={color} />,
+          tabBarIcon: ({ color }) => <Ionicons size={28} name="add-circle-outline" color={color} />,
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="profile"
         options={{
-          title: 'Explore',
-          headerShown: false,
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Bigrootagram',
+          headerShown: true,
+          headerTitleAlign: 'center',
+          headerTitleStyle: {
+            fontFamily: 'Cochin',
+            fontSize: 24,
+          },
+          tabBarIcon: ({ color }) => <Ionicons size={28} name="person-circle-outline" color={color} />,
+          headerRight: () => (
+            <TouchableOpacity onPress={() => supabase.auth.signOut()} style={{ marginRight: 15 }}>
+              <Ionicons name="log-out-outline" size={28} color={Colors[colorScheme ?? 'light'].text} />
+            </TouchableOpacity>
+          ),
         }}
       />
     </Tabs>
