@@ -1,8 +1,9 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Image } from 'expo-image';
-import { ThemedText } from './themed-text';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
+import { Link } from 'expo-router';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ThemedText } from './themed-text';
 
 type Post = {
   id: string;
@@ -10,8 +11,6 @@ type Post = {
   caption: string;
   created_at: string;
   user_id: string;
-  // In a real app, you'd fetch user details
-  // user: { avatar_url: string; username: string };
 };
 
 type PostCardProps = {
@@ -19,7 +18,6 @@ type PostCardProps = {
 };
 
 export default function PostCard({ post }: PostCardProps) {
-  // Placeholder for user details
   const username = post.user_id.substring(0, 8);
 
   return (
@@ -34,7 +32,11 @@ export default function PostCard({ post }: PostCardProps) {
       </View>
 
       {/* Post Image */}
-      <Image source={{ uri: post.image_url }} style={styles.postImage} contentFit="cover" />
+      <Link href={`/post/${post.id}` as any} asChild>
+        <TouchableOpacity>
+            <Image source={{ uri: post.image_url }} style={styles.postImage} contentFit="cover" />
+        </TouchableOpacity>
+      </Link>
 
       {/* Action Bar */}
       <View style={styles.actionBar}>

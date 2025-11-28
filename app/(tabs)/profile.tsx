@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, ActivityIndicator, FlatList, Dimensions, TouchableOpacity } from 'react-native';
-import { supabase } from '@/utils/supabase';
 import { useAuth } from '@/providers/AuthProvider';
+import { supabase } from '@/utils/supabase';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
+import { Link } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type Post = {
   id: string;
@@ -85,12 +85,14 @@ export default function ProfileScreen() {
             numColumns={numColumns}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-                <View style={styles.imageContainer}>
+              <Link href={`/post/${item.id}` as any} asChild>
+                <TouchableOpacity style={styles.imageContainer}>
                     <Image
                         source={{ uri: item.image_url }}
                         style={{ width: imageSize - 2, height: imageSize - 2 }}
                     />
-                </View>
+                </TouchableOpacity>
+              </Link>
             )}
             ListHeaderComponent={renderHeader}
             showsVerticalScrollIndicator={false}
