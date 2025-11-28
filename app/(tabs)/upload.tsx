@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, Button, TextInput, ActivityIndicator, Alert } from 'react-native';
+import { StyleSheet, View, Text, TextInput, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import { supabase } from '@/utils/supabase';
 import { useAuth } from '@/providers/AuthProvider'; // Import useAuth
 import 'react-native-get-random-values'; // Required for uuid to work with React Native
 import { v4 as uuidv4 } from 'uuid'; // For generating unique filenames
+import { Ionicons } from '@expo/vector-icons';
+
 
 export default function UploadScreen() {
   const { user } = useAuth(); // Get the authenticated user
@@ -14,11 +16,10 @@ export default function UploadScreen() {
   const [uploading, setUploading] = useState(false);
 
   const pickImage = async () => {
-    // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      aspect: [4, 3],
+      aspect: [1, 1],
       quality: 1,
     });
 
@@ -91,23 +92,30 @@ export default function UploadScreen() {
 
   return (
     <View style={styles.container}>
-      <Button title="Pick an image from gallery" onPress={pickImage} />
-      {imageUri && (
-        <Image source={{ uri: imageUri }} style={styles.imagePreview} contentFit="cover" />
-      )}
-      <TextInput
-        style={styles.captionInput}
-        placeholder="Write a caption..."
-        value={caption}
-        onChangeText={setCaption}
-        multiline
-      />
-      <Button
-        title={uploading ? 'Uploading...' : 'Upload Post'}
-        onPress={uploadImageAndPost}
-        disabled={uploading || !imageUri}
-      />
-      {uploading && <ActivityIndicator size="small" style={styles.activityIndicator} />}
+        {!imageUri ? (
+            <TouchableOpacity style={styles.pickButton} onPress={pickImage}>
+                <Ionicons name="images-outline" size={60} color="#8e8e8e" />
+                <Text style={styles.pickText}>Select a photo</Text>
+            </TouchableOpacity>
+        ) : (
+            <>
+                <Image source={{ uri: imageUri }} style={styles.imagePreview} contentFit="cover" />
+                <TextInput
+                    style={styles.captionInput}
+                    placeholder="Write a caption..."
+                    placeholderTextColor="#8e8e8e"
+                    value={caption}
+                    onChangeText={setCaption}
+                    multiline
+                />
+                <TouchableOpacity style={styles.uploadButton} onPress={uploadImageAndPost} disabled={uploading}>
+                    {uploading ? <ActivityIndicator color="white" /> : <Text style={styles.uploadButtonText}>Share</Text>}
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.discardButton} onPress={() => setImageUri(null)} disabled={uploading}>
+                    <Text style={styles.discardButtonText}>Discard</Text>
+                </TouchableOpacity>
+            </>
+        )}
     </View>
   );
 }
@@ -118,24 +126,56 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'white',
+  },
+  pickButton: {
+      justifyContent: 'center',
+      alignItems: 'center',
+      width: 200,
+      height: 200,
+      borderRadius: 10,
+      borderWidth: 2,
+      borderColor: '#dbdbdb',
+      borderStyle: 'dashed',
+  },
+  pickText: {
+      marginTop: 10,
+      color: '#8e8e8e',
+      fontSize: 16,
   },
   imagePreview: {
     width: '100%',
-    height: 200,
-    marginVertical: 20,
+    aspectRatio: 1 / 1,
     borderRadius: 10,
+    marginBottom: 20,
   },
   captionInput: {
     width: '100%',
-    height: 80,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 10,
     padding: 10,
-    marginBottom: 20,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#dbdbdb',
+    marginBottom: 10,
+    fontSize: 16,
+    minHeight: 100,
     textAlignVertical: 'top',
   },
-  activityIndicator: {
-    marginTop: 10,
+  uploadButton: {
+    backgroundColor: '#3797f0',
+    padding: 15,
+    borderRadius: 5,
+    alignItems: 'center',
+    width: '100%',
   },
+  uploadButtonText: {
+      color: 'white',
+      fontWeight: 'bold',
+      fontSize: 16,
+  },
+  discardButton: {
+      marginTop: 10,
+  },
+  discardButtonText: {
+      color: '#ff3b30'
+  }
 });
