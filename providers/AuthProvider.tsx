@@ -1,6 +1,5 @@
 import { supabase } from '@/utils/supabase';
 import { Session, User } from '@supabase/supabase-js';
-import { useRouter, useSegments } from 'expo-router';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 type AuthContextType = {
@@ -18,28 +17,6 @@ const AuthContext = createContext<AuthContextType>({
 // This hook can be used to access the user info.
 export function useAuth() {
   return useContext(AuthContext);
-}
-
-// This hook will protect the route access based on user authentication.
-function useProtectedRoute(session: Session | null) {
-  const segments = useSegments();
-  const router = useRouter();
-
-  useEffect(() => {
-    const inAuthGroup = segments[0] === '(auth)';
-
-    if (
-      // If the user is not signed in and the initial segment is not anything in the auth group.
-      !session &&
-      !inAuthGroup
-    ) {
-      // Redirect to the login page.
-      router.replace('/login');
-    } else if (session && inAuthGroup) {
-      // Redirect away from the login page.
-      router.replace('/');
-    }
-  }, [session, segments, router]);
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -64,8 +41,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       authListener.subscription.unsubscribe();
     };
   }, []);
-
-  useProtectedRoute(session);
 
   return (
     <AuthContext.Provider
