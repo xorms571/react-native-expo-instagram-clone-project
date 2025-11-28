@@ -1,27 +1,45 @@
 import { supabase } from '@/utils/supabase';
+import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, StyleSheet, View, TextInput, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Link } from 'expo-router';
+import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-export default function LoginScreen() {
+export default function SignUpScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
-  async function signInWithEmail() {
+  async function signUpWithEmail() {
+    if (password !== confirmPassword) {
+        Alert.alert('Error', 'Passwords do not match!');
+        return;
+    }
+
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signUp({
       email: email,
       password: password,
+      options: {
+        data: {
+          username: username,
+        },
+      },
     });
 
-    if (error) Alert.alert('Error', error.message);
+    if (error) {
+        Alert.alert('Error', error.message);
+    } else {
+        Alert.alert('Success', 'Please check your email for a confirmation link.');
+        router.replace('/login')
+    }
     setLoading(false);
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Bigrootagram</Text>
+      <Text style={styles.header}>Create Account</Text>
       <TextInput
         style={styles.input}
         onChangeText={setEmail}
@@ -40,13 +58,30 @@ export default function LoginScreen() {
         placeholderTextColor="#8e8e8e"
         autoCapitalize="none"
       />
-      <TouchableOpacity style={styles.button} onPress={signInWithEmail} disabled={loading}>
-        {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Log In</Text>}
+      <TextInput
+        style={styles.input}
+        onChangeText={setConfirmPassword}
+        value={confirmPassword}
+        secureTextEntry
+        placeholder="Confirm Password"
+        placeholderTextColor="#8e8e8e"
+        autoCapitalize="none"
+      />
+      <TextInput
+        style={styles.input}
+        onChangeText={setUsername}
+        value={username}
+        placeholder="Username"
+        placeholderTextColor="#8e8e8e"
+        autoCapitalize="none"
+      />
+      <TouchableOpacity style={styles.button} onPress={signUpWithEmail} disabled={loading}>
+        {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Sign Up</Text>}
       </TouchableOpacity>
       <View style={styles.footer}>
-        <Text style={styles.footerText}>Don't have an account?</Text>
-        <Link href="/signup">
-            <Text style={styles.linkText}> Sign up.</Text>
+        <Text style={styles.footerText}>Already have an account?</Text>
+        <Link href="/login">
+            <Text style={styles.linkText}> Log in.</Text>
         </Link>
       </View>
     </View>
@@ -65,7 +100,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 40,
-    fontFamily: 'Cochin', // A more stylistic font
+    fontFamily: 'Cochin',
   },
   input: {
     backgroundColor: '#fafafa',
