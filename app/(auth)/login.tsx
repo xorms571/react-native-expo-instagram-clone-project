@@ -1,6 +1,6 @@
 import { supabase } from '@/utils/supabase';
 import React, { useState } from 'react';
-import { Alert, StyleSheet, View, TextInput, Button, Text } from 'react-native';
+import { Alert, StyleSheet, View, TextInput, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -26,6 +26,7 @@ export default function LoginScreen() {
     });
 
     if (error) Alert.alert('Error', error.message);
+    else Alert.alert('Success', 'Please check your email for a confirmation link.');
     setLoading(false);
   }
 
@@ -36,7 +37,8 @@ export default function LoginScreen() {
         style={styles.input}
         onChangeText={setEmail}
         value={email}
-        placeholder="email@address.com"
+        placeholder="Email"
+        placeholderTextColor="#8e8e8e"
         autoCapitalize="none"
         keyboardType="email-address"
       />
@@ -46,14 +48,15 @@ export default function LoginScreen() {
         value={password}
         secureTextEntry
         placeholder="Password"
+        placeholderTextColor="#8e8e8e"
         autoCapitalize="none"
       />
-      <View style={styles.buttonContainer}>
-        <Button title="Login" disabled={loading} onPress={signInWithEmail} />
-      </View>
-      <View style={styles.buttonContainer}>
-        <Button title="Sign Up" disabled={loading} onPress={signUpWithEmail} />
-      </View>
+      <TouchableOpacity style={styles.button} onPress={signInWithEmail} disabled={loading}>
+        {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Log In</Text>}
+      </TouchableOpacity>
+      <TouchableOpacity style={[styles.button, styles.signUpButton]} onPress={signUpWithEmail} disabled={loading}>
+        <Text style={styles.buttonText}>Sign Up</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -62,23 +65,38 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    padding: 16,
+    padding: 24,
+    backgroundColor: '#fff',
   },
   header: {
-    fontSize: 24,
+    fontSize: 40,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 40,
+    fontFamily: 'Cochin', // A more stylistic font
   },
   input: {
-    height: 40,
-    borderColor: 'gray',
+    backgroundColor: '#fafafa',
+    padding: 15,
+    borderRadius: 5,
     borderWidth: 1,
+    borderColor: '#dbdbdb',
     marginBottom: 12,
-    paddingHorizontal: 8,
-    borderRadius: 4,
+    fontSize: 16,
   },
-  buttonContainer: {
+  button: {
+    backgroundColor: '#3797f0',
+    padding: 15,
+    borderRadius: 5,
+    alignItems: 'center',
     marginTop: 10,
-  }
+  },
+  signUpButton: {
+    backgroundColor: '#4c68d7',
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
 });
