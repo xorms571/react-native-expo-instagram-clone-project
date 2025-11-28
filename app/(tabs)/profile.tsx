@@ -1,14 +1,22 @@
-import { useAuth } from '@/providers/AuthProvider';
+import { useState, useEffect } from 'react';
+import { StyleSheet, View, Text, ActivityIndicator, FlatList, Dimensions, TouchableOpacity } from 'react-native';
 import { supabase } from '@/utils/supabase';
+import { useAuth } from '@/providers/AuthProvider';
 import { Image } from 'expo-image';
-import { Link } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Link, useFocusEffect } from 'expo-router';
+import React from 'react';
 
 type Post = {
   id: string;
   image_url: string;
 };
+
+type Profile = {
+    username: string;
+    full_name: string;
+    website: string;
+} | null;
 
 const StatItem = ({ label, value }: { label: string; value: string | number }) => (
     <View style={styles.statItem}>
@@ -20,13 +28,27 @@ const StatItem = ({ label, value }: { label: string; value: string | number }) =
 export default function ProfileScreen() {
   const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
+  const [profile, setProfile] = useState<Profile>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (user) {
-      fetchUserPosts();
-    }
-  }, [user]);
+  useFocusEffect(
+    React.useCallback(() => {
+        if (user) {
+            fetchUserPosts();
+            fetchUserProfile();
+        }
+    }, [user])
+  );
+
+  async function fetchUserProfile() {
+      if(!user) return;
+      const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      if (error) {
+          console.error('Error fetching profile', error);
+      } else {
+          setProfile(data);
+      }
+  }
 
   async function fetchUserPosts() {
     if (!user) return;
@@ -51,8 +73,7 @@ export default function ProfileScreen() {
 
   const numColumns = 3;
   const imageSize = Dimensions.get('window').width / numColumns;
-  const username = user?.email?.split('@')[0] || 'user';
-
+  
   const renderHeader = () => (
     <View style={styles.headerContainer}>
         <View style={styles.topRow}>
@@ -67,13 +88,15 @@ export default function ProfileScreen() {
             </View>
         </View>
         <View style={styles.bioContainer}>
-            <Text style={styles.username}>{username}</Text>
+            <Text style={styles.username}>{profile?.full_name || profile?.username || 'User'}</Text>
             {/* Bio text could go here */}
         </View>
         <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.editButton}>
-                <Text style={styles.editButtonText}>Edit Profile</Text>
-            </TouchableOpacity>
+            <Link href="/profile/edit" asChild>
+                <TouchableOpacity style={styles.editButton}>
+                    <Text style={styles.editButtonText}>Edit Profile</Text>
+                </TouchableOpacity>
+            </Link>
         </View>
     </View>
   );
@@ -85,14 +108,14 @@ export default function ProfileScreen() {
             numColumns={numColumns}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <Link href={`/post/${item.id}` as any} asChild>
-                <TouchableOpacity style={styles.imageContainer}>
-                    <Image
-                        source={{ uri: item.image_url }}
-                        style={{ width: imageSize - 2, height: imageSize - 2 }}
-                    />
-                </TouchableOpacity>
-              </Link>
+                <Link href={`/post/${item.id}` as any} asChild>
+                    <TouchableOpacity style={styles.imageContainer}>
+                        <Image
+                            source={{ uri: item.image_url }}
+                            style={{ width: imageSize - 2, height: imageSize - 2 }}
+                        />
+                    </TouchableOpacity>
+                </Link>
             )}
             ListHeaderComponent={renderHeader}
             showsVerticalScrollIndicator={false}
