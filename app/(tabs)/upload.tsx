@@ -36,19 +36,20 @@ export default function UploadScreen() {
     setUploading(true);
 
     try {
-      // 1. Fetch image as blob
-      const response = await fetch(imageUri);
-      const blob = await response.blob();
-
-      // 2. Generate a unique filename
       const fileExt = imageUri.split('.').pop();
       const fileName = `${uuidv4()}.${fileExt}`;
-      const filePath = `${user.id}/${fileName}`; // Store images in user-specific folders
+      const filePath = `${user.id}/${fileName}`;
+      
+      const formData = new FormData();
+      formData.append('file', {
+        uri: imageUri,
+        name: fileName,
+        type: `image/${fileExt}`,
+      } as any);
 
-      // 3. Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('posts')
-        .upload(filePath, blob, {
+        .upload(filePath, formData, {
           cacheControl: '3600',
           upsert: false,
         });
@@ -57,7 +58,6 @@ export default function UploadScreen() {
         throw uploadError;
       }
 
-      // 4. Get public URL
       const { data: publicUrlData } = supabase.storage
         .from('posts')
         .getPublicUrl(filePath);
@@ -66,7 +66,6 @@ export default function UploadScreen() {
         throw new Error('Failed to get public URL for the uploaded image.');
       }
 
-      // 5. Insert post into database
       const { error: insertError } = await supabase
         .from('posts')
         .insert({
