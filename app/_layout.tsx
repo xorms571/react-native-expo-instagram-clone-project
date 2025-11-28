@@ -44,6 +44,7 @@ function RootLayoutNav() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
         <Stack.Screen name="post/[id]" options={{ title: 'Post', headerTitleAlign: 'center' }} />
+        <Stack.Screen name="post/edit/[id]" options={{ title: 'Edit Post', headerTitleAlign: 'center' }} />
         <Stack.Screen name="profile/edit" options={{ title: 'Edit Profile', headerTitleAlign: 'center' }} />
       </Stack>
       <StatusBar style="auto" />
