@@ -1,3 +1,4 @@
+import { Post } from '@/app/(tabs)/index';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Link } from 'expo-router';
@@ -5,27 +6,20 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from './themed-text';
 
-type Post = {
-  id: string;
-  image_url: string;
-  caption: string;
-  created_at: string;
-  user_id: string;
-};
-
 type PostCardProps = {
   post: Post;
 };
 
 export default function PostCard({ post }: PostCardProps) {
-  const username = post.user_id.substring(0, 8);
+  const username = post.profiles?.username || 'unknown';
+  const avatarUrl = post.profiles?.avatar_url || `https://i.pravatar.cc/150?u=${post.user_id}`;
 
   return (
     <View style={styles.container}>
       {/* Post Header */}
       <View style={styles.header}>
         <Image
-          source={{ uri: `https://i.pravatar.cc/150?u=${post.user_id}` }} // Placeholder avatar
+          source={{ uri: avatarUrl }}
           style={styles.avatar}
         />
         <ThemedText type="defaultSemiBold">{username}</ThemedText>

@@ -1,5 +1,5 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { router, SplashScreen, Stack, useSegments } from 'expo-router';
+import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
@@ -17,6 +17,7 @@ SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
   const { session, loading } = useAuth();
+  const router = useRouter();
   const segments = useSegments();
   const colorScheme = useColorScheme();
 
@@ -26,7 +27,7 @@ function RootLayoutNav() {
       const inAuthGroup = segments[0] === '(auth)';
 
       if (!session && !inAuthGroup) {
-        router.replace('/(auth)/login');
+        router.replace('/login');
       } else if (session && inAuthGroup) {
         router.replace('/');
       }
@@ -41,7 +42,6 @@ function RootLayoutNav() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
         <Stack.Screen name="post/[id]" options={{ title: 'Post', headerTitleAlign: 'center' }} />
         <Stack.Screen name="profile/edit" options={{ title: 'Edit Profile', headerTitleAlign: 'center' }} />

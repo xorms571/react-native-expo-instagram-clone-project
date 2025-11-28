@@ -1,16 +1,9 @@
-import { useLocalSearchParams } from 'expo-router';
-import { useState, useEffect } from 'react';
-import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
-import { supabase } from '@/utils/supabase';
 import PostCard from '@/components/PostCard';
-
-type Post = {
-    id: string;
-    image_url: string;
-    caption: string;
-    created_at: string;
-    user_id: string;
-};
+import { supabase } from '@/utils/supabase';
+import { useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { Post } from '../(tabs)';
 
 export default function PostDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();

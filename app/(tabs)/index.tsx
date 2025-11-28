@@ -1,14 +1,19 @@
-import { useState, useEffect } from 'react';
-import { StyleSheet, FlatList, View, Text, ActivityIndicator, Button, RefreshControl } from 'react-native';
-import { supabase } from '@/utils/supabase';
 import PostCard from '@/components/PostCard'; // Import the new component
+import { supabase } from '@/utils/supabase';
+import { useFocusEffect } from 'expo-router';
+import React, { useState } from 'react';
+import { ActivityIndicator, Button, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
-type Post = {
+export type Post = {
   id: string;
   image_url: string;
   caption: string;
   created_at: string;
   user_id: string;
+  profiles: {
+      username: string;
+      avatar_url: string;
+  } | null;
 };
 
 export default function FeedScreen() {
@@ -17,23 +22,25 @@ export default function FeedScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchPosts();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+        fetchPosts();
+    }, [])
+  );
 
   async function fetchPosts() {
     setLoading(true);
     setError(null);
     const { data, error } = await supabase
       .from('posts')
-      .select('*')
+      .select('*, profiles(username, avatar_url)')
       .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching posts:', error);
       setError(error.message);
     } else {
-      setPosts(data || []);
+      setPosts(data as any);
     }
     setLoading(false);
   }
