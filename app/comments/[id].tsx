@@ -23,18 +23,51 @@ export type Comment = {
     user_id: string;
     content: string;
     created_at: string;
+    parent_id: string | null;
     profiles: {
         username: string;
         avatar_url: string;
     } | null;
 };
 
+export type CommentWithLevel = Comment & { level: number };
+
+function nestComments(commentList: Comment[]): CommentWithLevel[] {
+    type CommentWithReplies = Comment & { replies: CommentWithReplies[] };
+
+    const commentMap = new Map<string, CommentWithReplies>();
+    commentList.forEach(comment => commentMap.set(comment.id, { ...comment, replies: [] }));
+
+    const rootComments: CommentWithReplies[] = [];
+    commentList.forEach(comment => {
+        if (comment.parent_id && commentMap.has(comment.parent_id)) {
+            commentMap.get(comment.parent_id)!.replies.push(commentMap.get(comment.id)!);
+        } else {
+            rootComments.push(commentMap.get(comment.id)!);
+        }
+    });
+
+    const flattened: CommentWithLevel[] = [];
+    const flatten = (comments: CommentWithReplies[], level: number) => {
+        comments.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        for (const comment of comments) {
+            const { replies, ...rest } = comment;
+            flattened.push({ ...rest, level });
+            flatten(replies, level + 1);
+        }
+    };
+
+    flatten(rootComments, 0);
+    return flattened;
+}
+
 export default function CommentsScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const { user } = useAuth();
-    const [comments, setComments] = useState<Comment[]>([]);
+    const [comments, setComments] = useState<CommentWithLevel[]>([]);
     const [newComment, setNewComment] = useState('');
     const [loading, setLoading] = useState(true);
+    const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
 
     useEffect(() => {
         if (id) {
@@ -53,7 +86,8 @@ export default function CommentsScreen() {
         if (error) {
             console.error('Error fetching comments:', error);
         } else {
-            setComments(data as any);
+            const nested = nestComments(data as any);
+            setComments(nested);
         }
         setLoading(false);
     }
@@ -67,6 +101,7 @@ export default function CommentsScreen() {
             post_id: id,
             user_id: user.id,
             content: newComment.trim(),
+            parent_id: replyingTo ? replyingTo.id : null,
         });
 
         if (error) {
@@ -74,6 +109,7 @@ export default function CommentsScreen() {
             Alert.alert('Error', 'Failed to add comment.');
         } else {
             setNewComment('');
+            setReplyingTo(null);
             if (id) fetchComments(id); // Refresh comments
         }
     }
@@ -82,17 +118,22 @@ export default function CommentsScreen() {
         return <ActivityIndicator style={styles.centered} />;
     }
     
-    const renderComment = ({ item }: { item: Comment }) => {
+    const renderComment = ({ item }: { item: CommentWithLevel }) => {
         const username = item.profiles?.username || 'unknown';
         const avatarUrl = item.profiles?.avatar_url || `https://i.pravatar.cc/150?u=${item.user_id}`;
         return (
-            <View style={styles.commentContainer}>
+            <View style={[styles.commentContainer, { marginLeft: item.level * 20 }]}>
                 <Image source={{ uri: avatarUrl }} style={styles.commentAvatar} />
                 <View style={styles.commentTextContainer}>
                     <Text>
                         <Text style={styles.commentUsername}>{username}</Text> {item.content}
                     </Text>
-                    <Text style={styles.commentTimestamp}>{new Date(item.created_at).toLocaleDateString()}</Text>
+                    <View style={styles.commentActions}>
+                        <Text style={styles.commentTimestamp}>{new Date(item.created_at).toLocaleDateString()}</Text>
+                        <TouchableOpacity onPress={() => setReplyingTo(item)}>
+                            <Text style={styles.replyButton}>Reply</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </View>
         );
@@ -112,15 +153,25 @@ export default function CommentsScreen() {
                     style={styles.listContainer}
                 />
                 <View style={styles.commentInputContainer}>
-                    <TextInput
-                        style={styles.commentInput}
-                        placeholder="Add a comment..."
-                        value={newComment}
-                        onChangeText={setNewComment}
-                    />
-                    <TouchableOpacity onPress={addComment} style={styles.postButton}>
-                        <Text style={styles.postButtonText}>Post</Text>
-                    </TouchableOpacity>
+                    {replyingTo && (
+                        <View style={styles.replyingToContainer}>
+                            <Text style={styles.replyingToText}>Replying to {replyingTo.profiles?.username}</Text>
+                            <TouchableOpacity onPress={() => setReplyingTo(null)}>
+                                <Text style={styles.cancelReplyButton}>Cancel</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                    <View style={styles.inputRow}>
+                        <TextInput
+                            style={styles.commentInput}
+                            placeholder={replyingTo ? `Add a reply...` : "Add a comment..."}
+                            value={newComment}
+                            onChangeText={setNewComment}
+                        />
+                        <TouchableOpacity onPress={addComment} style={styles.postButton}>
+                            <Text style={styles.postButtonText}>Post</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </KeyboardAvoidingView>
         </SafeAreaView>
@@ -130,7 +181,6 @@ export default function CommentsScreen() {
 const styles = StyleSheet.create({
     keyboardAvoidingView: {
         flex: 1,
-        // backgroundColor: 'white', // Moved to SafeAreaView
     },
     title: {
         fontSize: 20,
@@ -167,17 +217,45 @@ const styles = StyleSheet.create({
     commentUsername: {
         fontWeight: 'bold',
     },
+    commentActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 4,
+    },
     commentTimestamp: {
         fontSize: 12,
         color: '#999',
-        marginTop: 4,
+    },
+    replyButton: {
+        marginLeft: 10,
+        color: '#3797f0',
+        fontWeight: 'bold',
+        fontSize: 12,
     },
     commentInputContainer: {
-        flexDirection: 'row',
         padding: 10,
         borderTopWidth: 1,
         borderTopColor: '#eee',
         backgroundColor: 'white',
+    },
+    replyingToContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 5,
+        paddingHorizontal: 5,
+    },
+    replyingToText: {
+        color: '#888',
+        fontSize: 12,
+    },
+    cancelReplyButton: {
+        color: '#3797f0',
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
+    inputRow: {
+        flexDirection: 'row',
         alignItems: 'center',
     },
     commentInput: {

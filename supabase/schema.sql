@@ -93,6 +93,7 @@ CREATE TABLE IF NOT EXISTS public.comments (
     user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     content text NOT NULL,
     created_at timestamptz NOT NULL DEFAULT now(),
+    parent_id uuid NULL REFERENCES public.comments(id) ON DELETE CASCADE,
     CONSTRAINT comments_pkey PRIMARY KEY (id)
 );
 
