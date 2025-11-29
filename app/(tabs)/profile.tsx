@@ -3,7 +3,6 @@ import { StyleSheet, View, Text, ActivityIndicator, FlatList, Dimensions, Toucha
 import { supabase } from '@/utils/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
 import { Link, useFocusEffect } from 'expo-router';
 import React from 'react';
 
@@ -12,11 +11,16 @@ type Post = {
   image_url: string;
 };
 
-type Profile = {
+type ProfileData = {
+    id: string;
     username: string;
     full_name: string;
+    avatar_url: string;
     website: string;
-} | null;
+    post_count: number;
+    follower_count: number;
+    following_count: number;
+};
 
 const StatItem = ({ label, value }: { label: string; value: string | number }) => (
     <View style={styles.statItem}>
@@ -28,25 +32,25 @@ const StatItem = ({ label, value }: { label: string; value: string | number }) =
 export default function ProfileScreen() {
   const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
-  const [profile, setProfile] = useState<Profile>(null);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useFocusEffect(
     React.useCallback(() => {
         if (user) {
+            fetchProfileData();
             fetchUserPosts();
-            fetchUserProfile();
         }
     }, [user])
   );
 
-  async function fetchUserProfile() {
+  async function fetchProfileData() {
       if(!user) return;
-      const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      const { data, error } = await supabase.rpc('get_profile_data', { p_profile_id: user.id, p_current_user_id: user.id }).single();
       if (error) {
           console.error('Error fetching profile', error);
       } else {
-          setProfile(data);
+          setProfile(data as ProfileData);
       }
   }
 
@@ -67,7 +71,7 @@ export default function ProfileScreen() {
     setLoading(false);
   }
 
-  if (loading) {
+  if (loading || !profile) {
     return <ActivityIndicator style={styles.centered} />;
   }
 
@@ -78,13 +82,13 @@ export default function ProfileScreen() {
     <View style={styles.headerContainer}>
         <View style={styles.topRow}>
             <Image
-                source={{ uri: `https://i.pravatar.cc/150?u=${user?.id}` }}
+                source={{ uri: profile.avatar_url || `https://i.pravatar.cc/150?u=${user?.id}` }}
                 style={styles.avatar}
             />
             <View style={styles.statsContainer}>
-                <StatItem value={posts.length} label="Posts" />
-                <StatItem value="1.2M" label="Followers" />
-                <StatItem value="1" label="Following" />
+                <StatItem value={profile.post_count} label="Posts" />
+                <StatItem value={profile.follower_count} label="Followers" />
+                <StatItem value={profile.following_count} label="Following" />
             </View>
         </View>
         <View style={styles.bioContainer}>

@@ -16,6 +16,7 @@ export type Post = {
   } | null;
   like_count: number;
   user_has_liked: boolean;
+  author_is_followed: boolean;
 };
 
 export default function FeedScreen() {

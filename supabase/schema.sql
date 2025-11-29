@@ -141,6 +141,7 @@ CREATE POLICY "Users can delete their own likes." ON public.likes
   FOR DELETE TO authenticated USING (auth.uid() = user_id);
 
 -- 8. RPC function to get posts with likes
+DROP FUNCTION IF EXISTS get_posts_with_likes(uuid);
 CREATE OR REPLACE FUNCTION get_posts_with_likes(p_user_id uuid)
 RETURNS TABLE (
     id uuid,
@@ -150,7 +151,8 @@ RETURNS TABLE (
     created_at timestamptz,
     profiles json,
     like_count bigint,
-    user_has_liked boolean
+    user_has_liked boolean,
+    author_is_followed boolean
 ) AS $$
 BEGIN
     RETURN QUERY
@@ -165,7 +167,8 @@ BEGIN
             'avatar_url', pr.avatar_url
         ),
         (SELECT COUNT(*) FROM public.likes l WHERE l.post_id = p.id) as like_count,
-        EXISTS(SELECT 1 FROM public.likes l WHERE l.post_id = p.id AND l.user_id = p_user_id) as user_has_liked
+        EXISTS(SELECT 1 FROM public.likes l WHERE l.post_id = p.id AND l.user_id = p_user_id) as user_has_liked,
+        EXISTS(SELECT 1 FROM public.followers f WHERE f.following_id = p.user_id AND f.follower_id = p_user_id) as author_is_followed
     FROM
         public.posts p
     JOIN
@@ -176,6 +179,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- 9. RPC function to get post details with likes
+DROP FUNCTION IF EXISTS get_post_details(uuid, uuid);
 CREATE OR REPLACE FUNCTION get_post_details(p_post_id uuid, p_user_id uuid)
 RETURNS TABLE (
     id uuid,
@@ -185,7 +189,8 @@ RETURNS TABLE (
     created_at timestamptz,
     profiles json,
     like_count bigint,
-    user_has_liked boolean
+    user_has_liked boolean,
+    author_is_followed boolean
 ) AS $$
 BEGIN
     RETURN QUERY
@@ -200,7 +205,8 @@ BEGIN
             'avatar_url', pr.avatar_url
         ),
         (SELECT COUNT(*) FROM public.likes l WHERE l.post_id = p.id) as like_count,
-        EXISTS(SELECT 1 FROM public.likes l WHERE l.post_id = p.id AND l.user_id = p_user_id) as user_has_liked
+        EXISTS(SELECT 1 FROM public.likes l WHERE l.post_id = p.id AND l.user_id = p_user_id) as user_has_liked,
+        EXISTS(SELECT 1 FROM public.followers f WHERE f.following_id = p.user_id AND f.follower_id = p_user_id) as author_is_followed
     FROM
         public.posts p
     JOIN
@@ -271,5 +277,63 @@ BEGIN
         c.post_id = p_post_id
     ORDER BY
         c.created_at ASC;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 12. "followers" table
+CREATE TABLE IF NOT EXISTS public.followers (
+    id uuid NOT NULL DEFAULT gen_random_uuid(),
+    follower_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    following_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    CONSTRAINT followers_pkey PRIMARY KEY (id),
+    CONSTRAINT followers_follower_id_following_id_key UNIQUE (follower_id, following_id),
+    CONSTRAINT followers_check_not_following_self CHECK (follower_id <> following_id)
+);
+
+-- followers table RLS
+ALTER TABLE public.followers ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow authenticated users to view all follows" ON public.followers;
+CREATE POLICY "Allow authenticated users to view all follows" ON public.followers
+  FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Allow authenticated users to insert their own follows" ON public.followers;
+CREATE POLICY "Allow authenticated users to insert their own follows" ON public.followers
+  FOR INSERT TO authenticated WITH CHECK (auth.uid() = follower_id);
+
+DROP POLICY IF EXISTS "Users can delete their own follows." ON public.followers;
+CREATE POLICY "Users can delete their own follows." ON public.followers
+  FOR DELETE TO authenticated USING (auth.uid() = follower_id);
+
+-- 13. RPC function to get profile data with follow status
+CREATE OR REPLACE FUNCTION get_profile_data(p_profile_id uuid, p_current_user_id uuid)
+RETURNS TABLE (
+    id uuid,
+    username text,
+    full_name text,
+    avatar_url text,
+    website text,
+    post_count bigint,
+    follower_count bigint,
+    following_count bigint,
+    is_following boolean
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        pr.id,
+        pr.username,
+        pr.full_name,
+        pr.avatar_url,
+        pr.website,
+        (SELECT COUNT(*) FROM public.posts p WHERE p.user_id = p_profile_id) as post_count,
+        (SELECT COUNT(*) FROM public.followers f WHERE f.following_id = p_profile_id) as follower_count,
+        (SELECT COUNT(*) FROM public.followers f WHERE f.follower_id = p_profile_id) as following_count,
+        EXISTS(SELECT 1 FROM public.followers f WHERE f.following_id = p_profile_id AND f.follower_id = p_current_user_id) as is_following
+    FROM
+        public.profiles pr
+    WHERE
+        pr.id = p_profile_id;
 END;
 $$ LANGUAGE plpgsql;
