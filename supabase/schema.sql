@@ -114,3 +114,98 @@ CREATE POLICY "Users can update their own comments." ON public.comments
 DROP POLICY IF EXISTS "Users can delete their own comments." ON public.comments;
 CREATE POLICY "Users can delete their own comments." ON public.comments
   FOR DELETE TO authenticated USING (auth.uid() = user_id);
+
+-- 7. "likes" table
+CREATE TABLE IF NOT EXISTS public.likes (
+    id uuid NOT NULL DEFAULT gen_random_uuid(),
+    user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    post_id uuid NOT NULL REFERENCES public.posts(id) ON DELETE CASCADE,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    CONSTRAINT likes_pkey PRIMARY KEY (id),
+    CONSTRAINT likes_user_id_post_id_key UNIQUE (user_id, post_id) -- Prevent duplicate likes
+);
+
+-- likes table RLS
+ALTER TABLE public.likes ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow authenticated users to view all likes" ON public.likes;
+CREATE POLICY "Allow authenticated users to view all likes" ON public.likes
+  FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Allow authenticated users to insert their own likes" ON public.likes;
+CREATE POLICY "Allow authenticated users to insert their own likes" ON public.likes
+  FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can delete their own likes." ON public.likes;
+CREATE POLICY "Users can delete their own likes." ON public.likes
+  FOR DELETE TO authenticated USING (auth.uid() = user_id);
+
+-- 8. RPC function to get posts with likes
+CREATE OR REPLACE FUNCTION get_posts_with_likes(p_user_id uuid)
+RETURNS TABLE (
+    id uuid,
+    user_id uuid,
+    image_url text,
+    caption text,
+    created_at timestamptz,
+    profiles json,
+    like_count bigint,
+    user_has_liked boolean
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        p.id,
+        p.user_id,
+        p.image_url,
+        p.caption,
+        p.created_at,
+        json_build_object(
+            'username', pr.username,
+            'avatar_url', pr.avatar_url
+        ),
+        (SELECT COUNT(*) FROM public.likes l WHERE l.post_id = p.id) as like_count,
+        EXISTS(SELECT 1 FROM public.likes l WHERE l.post_id = p.id AND l.user_id = p_user_id) as user_has_liked
+    FROM
+        public.posts p
+    JOIN
+        public.profiles pr ON p.user_id = pr.id
+    ORDER BY
+        p.created_at DESC;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 9. RPC function to get post details with likes
+CREATE OR REPLACE FUNCTION get_post_details(p_post_id uuid, p_user_id uuid)
+RETURNS TABLE (
+    id uuid,
+    user_id uuid,
+    image_url text,
+    caption text,
+    created_at timestamptz,
+    profiles json,
+    like_count bigint,
+    user_has_liked boolean
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        p.id,
+        p.user_id,
+        p.image_url,
+        p.caption,
+        p.created_at,
+        json_build_object(
+            'username', pr.username,
+            'avatar_url', pr.avatar_url
+        ),
+        (SELECT COUNT(*) FROM public.likes l WHERE l.post_id = p.id) as like_count,
+        EXISTS(SELECT 1 FROM public.likes l WHERE l.post_id = p.id AND l.user_id = p_user_id) as user_has_liked
+    FROM
+        public.posts p
+    JOIN
+        public.profiles pr ON p.user_id = pr.id
+    WHERE
+        p.id = p_post_id;
+END;
+$$ LANGUAGE plpgsql;

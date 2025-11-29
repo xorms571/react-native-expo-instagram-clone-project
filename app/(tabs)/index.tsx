@@ -14,6 +14,8 @@ export type Post = {
       username: string;
       avatar_url: string;
   } | null;
+  like_count: number;
+  user_has_liked: boolean;
 };
 
 export default function FeedScreen() {
@@ -31,10 +33,16 @@ export default function FeedScreen() {
   async function fetchPosts() {
     setLoading(true);
     setError(null);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        setError("User not found.");
+        setLoading(false);
+        return
+    }
+
     const { data, error } = await supabase
-      .from('posts')
-      .select('*, profiles(username, avatar_url)')
-      .order('created_at', { ascending: false });
+      .rpc('get_posts_with_likes', { p_user_id: user.id })
 
     if (error) {
       console.error('Error fetching posts:', error);

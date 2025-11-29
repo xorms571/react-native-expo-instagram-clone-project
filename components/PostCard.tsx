@@ -1,8 +1,10 @@
 import { Post } from '@/app/(tabs)/index';
+import { useAuth } from '@/providers/AuthProvider';
+import { supabase } from '@/utils/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Link } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from './themed-text';
 
@@ -11,8 +13,50 @@ type PostCardProps = {
 };
 
 export default function PostCard({ post }: PostCardProps) {
+  const { user } = useAuth();
   const username = post.profiles?.username || 'unknown';
   const avatarUrl = post.profiles?.avatar_url || `https://i.pravatar.cc/150?u=${post.user_id}`;
+
+  const [isLiked, setIsLiked] = useState(post.user_has_liked);
+  const [likeCount, setLikeCount] = useState(post.like_count);
+
+  const handleLike = async () => {
+    if (!user) return;
+
+    const currentlyLiked = isLiked;
+    const currentLikeCount = likeCount;
+
+    // Optimistic update
+    setIsLiked(!currentlyLiked);
+    setLikeCount(currentLikeCount + (currentlyLiked ? -1 : 1));
+
+    if (currentlyLiked) {
+      // Unlike
+      const { error } = await supabase
+        .from('likes')
+        .delete()
+        .match({ user_id: user.id, post_id: post.id });
+
+      if (error) {
+        // Revert on error
+        setIsLiked(currentlyLiked);
+        setLikeCount(currentLikeCount);
+        console.error('Error unliking post:', error);
+      }
+    } else {
+      // Like
+      const { error } = await supabase
+        .from('likes')
+        .insert({ user_id: user.id, post_id: post.id });
+
+      if (error) {
+        // Revert on error
+        setIsLiked(currentlyLiked);
+        setLikeCount(currentLikeCount);
+        console.error('Error liking post:', error);
+      }
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -34,9 +78,9 @@ export default function PostCard({ post }: PostCardProps) {
 
       {/* Action Bar */}
       <View style={styles.actionBar}>
-        <View style={styles.action}>
-            <Ionicons name="heart-outline" size={28} color="black" />
-        </View>
+        <TouchableOpacity onPress={handleLike} style={styles.action}>
+            <Ionicons name={isLiked ? "heart" : "heart-outline"} size={28} color={isLiked ? 'red' : 'black'} />
+        </TouchableOpacity>
         <Link href={`/comments/${post.id}` as any} style={styles.action}>
             <Ionicons name="chatbubble-outline" size={26} color="black" />
         </Link>
@@ -44,6 +88,13 @@ export default function PostCard({ post }: PostCardProps) {
             <Ionicons name="send-outline" size={26} color="black" />
         </View>
       </View>
+
+      {/* Likes Count */}
+      {likeCount > 0 && (
+        <View style={styles.likesContainer}>
+            <ThemedText type="defaultSemiBold">{likeCount} {likeCount === 1 ? 'like' : 'likes'}</ThemedText>
+        </View>
+      )}
 
       {/* Caption */}
       <View style={styles.captionContainer}>
@@ -86,6 +137,10 @@ const styles = StyleSheet.create({
   action: {
       marginRight: 12,
   },
+  likesContainer: {
+    paddingHorizontal: 12,
+    paddingBottom: 8,
+  },
   captionContainer: {
     paddingHorizontal: 12,
     paddingBottom: 12,
@@ -96,3 +151,4 @@ const styles = StyleSheet.create({
       marginTop: 4,
   }
 });
+

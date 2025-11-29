@@ -23,10 +23,16 @@ export default function PostDetailScreen() {
     async function fetchPost() {
         if (!id) return;
         setLoading(true);
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            setError("User not found.");
+            setLoading(false);
+            return
+        }
+
         const { data, error } = await supabase
-            .from('posts')
-            .select('*, profiles(username, avatar_url)')
-            .eq('id', id)
+            .rpc('get_post_details', { p_post_id: id, p_user_id: user.id })
             .single();
 
         if (error) {
