@@ -209,3 +209,67 @@ BEGIN
         p.id = p_post_id;
 END;
 $$ LANGUAGE plpgsql;
+
+-- 10. "comment_likes" table
+CREATE TABLE IF NOT EXISTS public.comment_likes (
+    id uuid NOT NULL DEFAULT gen_random_uuid(),
+    user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    comment_id uuid NOT NULL REFERENCES public.comments(id) ON DELETE CASCADE,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    CONSTRAINT comment_likes_pkey PRIMARY KEY (id),
+    CONSTRAINT comment_likes_user_id_comment_id_key UNIQUE (user_id, comment_id)
+);
+
+-- comment_likes table RLS
+ALTER TABLE public.comment_likes ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow authenticated users to view all comment likes" ON public.comment_likes;
+CREATE POLICY "Allow authenticated users to view all comment likes" ON public.comment_likes
+  FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Allow authenticated users to insert their own comment likes" ON public.comment_likes;
+CREATE POLICY "Allow authenticated users to insert their own comment likes" ON public.comment_likes
+  FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can delete their own comment likes." ON public.comment_likes;
+CREATE POLICY "Users can delete their own comment likes." ON public.comment_likes
+  FOR DELETE TO authenticated USING (auth.uid() = user_id);
+
+-- 11. RPC function to get comments with likes
+CREATE OR REPLACE FUNCTION get_comments_with_likes(p_post_id uuid, p_user_id uuid)
+RETURNS TABLE (
+    id uuid,
+    post_id uuid,
+    user_id uuid,
+    content text,
+    created_at timestamptz,
+    parent_id uuid,
+    profiles json,
+    like_count bigint,
+    user_has_liked boolean
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        c.id,
+        c.post_id,
+        c.user_id,
+        c.content,
+        c.created_at,
+        c.parent_id,
+        json_build_object(
+            'username', pr.username,
+            'avatar_url', pr.avatar_url
+        ),
+        (SELECT COUNT(*) FROM public.comment_likes cl WHERE cl.comment_id = c.id) as like_count,
+        EXISTS(SELECT 1 FROM public.comment_likes cl WHERE cl.comment_id = c.id AND cl.user_id = p_user_id) as user_has_liked
+    FROM
+        public.comments c
+    JOIN
+        public.profiles pr ON c.user_id = pr.id
+    WHERE
+        c.post_id = p_post_id
+    ORDER BY
+        c.created_at ASC;
+END;
+$$ LANGUAGE plpgsql;

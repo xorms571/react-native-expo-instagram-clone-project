@@ -28,6 +28,8 @@ export type Comment = {
         username: string;
         avatar_url: string;
     } | null;
+    like_count: number;
+    user_has_liked: boolean;
 };
 
 export type CommentWithLevel = Comment & { level: number };
@@ -61,6 +63,77 @@ function nestComments(commentList: Comment[]): CommentWithLevel[] {
     return flattened;
 }
 
+import { Ionicons } from '@expo/vector-icons';
+
+type CommentItemProps = {
+    comment: CommentWithLevel;
+    onReply: (comment: Comment) => void;
+};
+
+const CommentItem = ({ comment, onReply }: CommentItemProps) => {
+    const { user } = useAuth();
+    const [isLiked, setIsLiked] = useState(comment.user_has_liked);
+    const [likeCount, setLikeCount] = useState(comment.like_count);
+
+    const handleLike = async () => {
+        if (!user) return;
+
+        const currentlyLiked = isLiked;
+        const currentLikeCount = likeCount;
+
+        setIsLiked(!currentlyLiked);
+        setLikeCount(currentLikeCount + (currentlyLiked ? -1 : 1));
+
+        if (currentlyLiked) {
+            const { error } = await supabase
+                .from('comment_likes')
+                .delete()
+                .match({ user_id: user.id, comment_id: comment.id });
+            if (error) {
+                setIsLiked(currentlyLiked);
+                setLikeCount(currentLikeCount);
+                console.error('Error unliking comment:', error);
+            }
+        } else {
+            const { error } = await supabase
+                .from('comment_likes')
+                .insert({ user_id: user.id, comment_id: comment.id });
+            if (error) {
+                setIsLiked(currentlyLiked);
+                setLikeCount(currentLikeCount);
+                console.error('Error liking comment:', error);
+            }
+        }
+    };
+
+    const username = comment.profiles?.username || 'unknown';
+    const avatarUrl = comment.profiles?.avatar_url || `https://i.pravatar.cc/150?u=${comment.user_id}`;
+
+    return (
+        <View style={[styles.commentContainer, { marginLeft: comment.level * 20 }]}>
+            <Image source={{ uri: avatarUrl }} style={styles.commentAvatar} />
+            <View style={styles.commentTextContainer}>
+                <Text>
+                    <Text style={styles.commentUsername}>{username}</Text> {comment.content}
+                </Text>
+                <View style={styles.commentActions}>
+                    <Text style={styles.commentTimestamp}>{new Date(comment.created_at).toLocaleDateString()}</Text>
+                    <TouchableOpacity onPress={() => onReply(comment)}>
+                        <Text style={styles.replyButton}>Reply</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+            <View style={styles.likeContainer}>
+                <TouchableOpacity onPress={handleLike}>
+                    <Ionicons name={isLiked ? 'heart' : 'heart-outline'} size={16} color={isLiked ? 'red' : 'gray'} />
+                </TouchableOpacity>
+                {likeCount > 0 && <Text style={styles.likeCount}>{likeCount}</Text>}
+            </View>
+        </View>
+    );
+};
+
+
 export default function CommentsScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const { user } = useAuth();
@@ -70,18 +143,15 @@ export default function CommentsScreen() {
     const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
 
     useEffect(() => {
-        if (id) {
-            fetchComments(id);
+        if (id && user) {
+            fetchComments(id, user.id);
         }
-    }, [id]);
+    }, [id, user]);
 
-    async function fetchComments(postId: string) {
+    async function fetchComments(postId: string, userId: string) {
         setLoading(true);
         const { data, error } = await supabase
-            .from('comments')
-            .select('*, profiles(username, avatar_url)')
-            .eq('post_id', postId)
-            .order('created_at', { ascending: false });
+            .rpc('get_comments_with_likes', { p_post_id: postId, p_user_id: userId });
 
         if (error) {
             console.error('Error fetching comments:', error);
@@ -110,7 +180,7 @@ export default function CommentsScreen() {
         } else {
             setNewComment('');
             setReplyingTo(null);
-            if (id) fetchComments(id); // Refresh comments
+            if (id && user) fetchComments(id, user.id); // Refresh comments
         }
     }
 
@@ -118,27 +188,6 @@ export default function CommentsScreen() {
         return <ActivityIndicator style={styles.centered} />;
     }
     
-    const renderComment = ({ item }: { item: CommentWithLevel }) => {
-        const username = item.profiles?.username || 'unknown';
-        const avatarUrl = item.profiles?.avatar_url || `https://i.pravatar.cc/150?u=${item.user_id}`;
-        return (
-            <View style={[styles.commentContainer, { marginLeft: item.level * 20 }]}>
-                <Image source={{ uri: avatarUrl }} style={styles.commentAvatar} />
-                <View style={styles.commentTextContainer}>
-                    <Text>
-                        <Text style={styles.commentUsername}>{username}</Text> {item.content}
-                    </Text>
-                    <View style={styles.commentActions}>
-                        <Text style={styles.commentTimestamp}>{new Date(item.created_at).toLocaleDateString()}</Text>
-                        <TouchableOpacity onPress={() => setReplyingTo(item)}>
-                            <Text style={styles.replyButton}>Reply</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </View>
-        );
-    };
-
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
             <KeyboardAvoidingView
@@ -148,7 +197,7 @@ export default function CommentsScreen() {
                 <Text style={styles.title}>Comments</Text>
                 <FlatList
                     data={comments}
-                    renderItem={renderComment}
+                    renderItem={({ item }) => <CommentItem comment={item} onReply={setReplyingTo} />}
                     keyExtractor={(item) => item.id}
                     style={styles.listContainer}
                 />
@@ -204,6 +253,7 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
+        alignItems: 'center',
     },
     commentAvatar: {
         width: 35,
@@ -231,6 +281,14 @@ const styles = StyleSheet.create({
         color: '#3797f0',
         fontWeight: 'bold',
         fontSize: 12,
+    },
+    likeContainer: {
+        alignItems: 'center',
+        paddingLeft: 10,
+    },
+    likeCount: {
+        fontSize: 10,
+        color: 'gray',
     },
     commentInputContainer: {
         padding: 10,
@@ -278,3 +336,5 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
 });
+
+
