@@ -152,7 +152,8 @@ RETURNS TABLE (
     profiles json,
     like_count bigint,
     user_has_liked boolean,
-    author_is_followed boolean
+    author_is_followed boolean,
+    comment_count bigint
 ) AS $$
 BEGIN
     RETURN QUERY
@@ -168,7 +169,8 @@ BEGIN
         ),
         (SELECT COUNT(*) FROM public.likes l WHERE l.post_id = p.id) as like_count,
         EXISTS(SELECT 1 FROM public.likes l WHERE l.post_id = p.id AND l.user_id = p_user_id) as user_has_liked,
-        EXISTS(SELECT 1 FROM public.followers f WHERE f.following_id = p.user_id AND f.follower_id = p_user_id) as author_is_followed
+        EXISTS(SELECT 1 FROM public.followers f WHERE f.following_id = p.user_id AND f.follower_id = p_user_id) as author_is_followed,
+        (SELECT COUNT(*) FROM public.comments c WHERE c.post_id = p.id) as comment_count
     FROM
         public.posts p
     JOIN
@@ -190,7 +192,8 @@ RETURNS TABLE (
     profiles json,
     like_count bigint,
     user_has_liked boolean,
-    author_is_followed boolean
+    author_is_followed boolean,
+    comment_count bigint
 ) AS $$
 BEGIN
     RETURN QUERY
@@ -206,7 +209,8 @@ BEGIN
         ),
         (SELECT COUNT(*) FROM public.likes l WHERE l.post_id = p.id) as like_count,
         EXISTS(SELECT 1 FROM public.likes l WHERE l.post_id = p.id AND l.user_id = p_user_id) as user_has_liked,
-        EXISTS(SELECT 1 FROM public.followers f WHERE f.following_id = p.user_id AND f.follower_id = p_user_id) as author_is_followed
+        EXISTS(SELECT 1 FROM public.followers f WHERE f.following_id = p.user_id AND f.follower_id = p_user_id) as author_is_followed,
+        (SELECT COUNT(*) FROM public.comments c WHERE c.post_id = p.id) as comment_count
     FROM
         public.posts p
     JOIN

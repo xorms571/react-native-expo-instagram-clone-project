@@ -68,12 +68,45 @@ import { Ionicons } from '@expo/vector-icons';
 type CommentItemProps = {
     comment: CommentWithLevel;
     onReply: (comment: Comment) => void;
+    onDelete: (commentId: string) => void;
+    onUpdate: () => void;
 };
 
-const CommentItem = ({ comment, onReply }: CommentItemProps) => {
+const CommentItem = ({ comment, onReply, onDelete, onUpdate }: CommentItemProps) => {
     const { user } = useAuth();
     const [isLiked, setIsLiked] = useState(comment.user_has_liked);
     const [likeCount, setLikeCount] = useState(comment.like_count);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedContent, setEditedContent] = useState(comment.content);
+
+    const handleDelete = () => {
+        Alert.alert('Delete Comment', 'Are you sure you want to delete this comment?', [
+            { text: 'Cancel', style: 'cancel' },
+            {
+                text: 'Delete',
+                style: 'destructive',
+                onPress: () => onDelete(comment.id),
+            },
+        ]);
+    };
+
+    const handleUpdate = async () => {
+        if (!editedContent.trim()) {
+            Alert.alert('Error', 'Comment cannot be empty.');
+            return;
+        }
+        const { error } = await supabase
+            .from('comments')
+            .update({ content: editedContent })
+            .eq('id', comment.id);
+
+        if (error) {
+            Alert.alert('Error', 'Failed to update comment.');
+        } else {
+            setIsEditing(false);
+            onUpdate(); // Refresh the comments list
+        }
+    };
 
     const handleLike = async () => {
         if (!user) return;
@@ -108,27 +141,61 @@ const CommentItem = ({ comment, onReply }: CommentItemProps) => {
 
     const username = comment.profiles?.username || 'unknown';
     const avatarUrl = comment.profiles?.avatar_url || `https://i.pravatar.cc/150?u=${comment.user_id}`;
+    const isAuthor = user?.id === comment.user_id;
 
     return (
         <View style={[styles.commentContainer, { marginLeft: comment.level * 20 }]}>
             <Image source={{ uri: avatarUrl }} style={styles.commentAvatar} />
             <View style={styles.commentTextContainer}>
-                <Text>
-                    <Text style={styles.commentUsername}>{username}</Text> {comment.content}
-                </Text>
-                <View style={styles.commentActions}>
-                    <Text style={styles.commentTimestamp}>{new Date(comment.created_at).toLocaleDateString()}</Text>
-                    <TouchableOpacity onPress={() => onReply(comment)}>
-                        <Text style={styles.replyButton}>Reply</Text>
+                {isEditing ? (
+                    <>
+                        <TextInput
+                            value={editedContent}
+                            onChangeText={setEditedContent}
+                            style={styles.editInput}
+                            autoFocus
+                        />
+                        <View style={styles.editControls}>
+                            <TouchableOpacity onPress={handleUpdate}>
+                                <Text style={styles.editControlButton}>Save</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => setIsEditing(false)}>
+                                <Text style={[styles.editControlButton, { color: 'red' }]}>Cancel</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </>
+                ) : (
+                    <>
+                        <Text>
+                            <Text style={styles.commentUsername}>{username}</Text> {comment.content}
+                        </Text>
+                        <View style={styles.commentActions}>
+                            <Text style={styles.commentTimestamp}>{new Date(comment.created_at).toLocaleDateString()}</Text>
+                            <TouchableOpacity onPress={() => onReply(comment)}>
+                                <Text style={styles.replyButton}>Reply</Text>
+                            </TouchableOpacity>
+                            {isAuthor && (
+                                <>
+                                    <TouchableOpacity onPress={() => setIsEditing(true)}>
+                                        <Text style={styles.editButton}>Edit</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={handleDelete}>
+                                        <Text style={styles.deleteButton}>Delete</Text>
+                                    </TouchableOpacity>
+                                </>
+                            )}
+                        </View>
+                    </>
+                )}
+            </View>
+            {!isEditing && (
+                <View style={styles.likeContainer}>
+                    <TouchableOpacity onPress={handleLike}>
+                        <Ionicons name={isLiked ? 'heart' : 'heart-outline'} size={16} color={isLiked ? 'red' : 'gray'} />
                     </TouchableOpacity>
+                    {likeCount > 0 && <Text style={styles.likeCount}>{likeCount}</Text>}
                 </View>
-            </View>
-            <View style={styles.likeContainer}>
-                <TouchableOpacity onPress={handleLike}>
-                    <Ionicons name={isLiked ? 'heart' : 'heart-outline'} size={16} color={isLiked ? 'red' : 'gray'} />
-                </TouchableOpacity>
-                {likeCount > 0 && <Text style={styles.likeCount}>{likeCount}</Text>}
-            </View>
+            )}
         </View>
     );
 };
@@ -142,10 +209,14 @@ export default function CommentsScreen() {
     const [loading, setLoading] = useState(true);
     const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
 
-    useEffect(() => {
+    const fetchAndSetComments = () => {
         if (id && user) {
             fetchComments(id, user.id);
         }
+    }
+
+    useEffect(() => {
+        fetchAndSetComments();
     }, [id, user]);
 
     async function fetchComments(postId: string, userId: string) {
@@ -180,9 +251,19 @@ export default function CommentsScreen() {
         } else {
             setNewComment('');
             setReplyingTo(null);
-            if (id && user) fetchComments(id, user.id); // Refresh comments
+            fetchAndSetComments();
         }
     }
+
+    const handleDeleteComment = async (commentId: string) => {
+        const { error } = await supabase.from('comments').delete().eq('id', commentId);
+        if (error) {
+            Alert.alert('Error', 'Failed to delete comment.');
+            console.error('Error deleting comment:', error);
+        } else {
+            setComments(prevComments => prevComments.filter(c => c.id !== commentId));
+        }
+    };
 
     if (loading) {
         return <ActivityIndicator style={styles.centered} />;
@@ -197,7 +278,14 @@ export default function CommentsScreen() {
                 <Text style={styles.title}>Comments</Text>
                 <FlatList
                     data={comments}
-                    renderItem={({ item }) => <CommentItem comment={item} onReply={setReplyingTo} />}
+                    renderItem={({ item }) => (
+                        <CommentItem
+                            comment={item}
+                            onReply={setReplyingTo}
+                            onDelete={handleDeleteComment}
+                            onUpdate={fetchAndSetComments}
+                        />
+                    )}
                     keyExtractor={(item) => item.id}
                     style={styles.listContainer}
                 />
@@ -281,6 +369,33 @@ const styles = StyleSheet.create({
         color: '#3797f0',
         fontWeight: 'bold',
         fontSize: 12,
+    },
+    editButton: {
+        marginLeft: 10,
+        color: 'gray',
+        fontWeight: 'bold',
+        fontSize: 12,
+    },
+    deleteButton: {
+        marginLeft: 10,
+        color: 'red',
+        fontWeight: 'bold',
+        fontSize: 12,
+    },
+    editInput: {
+        borderBottomWidth: 1,
+        borderColor: '#ccc',
+        padding: 4,
+        marginBottom: 8,
+    },
+    editControls: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+    },
+    editControlButton: {
+        marginLeft: 10,
+        color: '#3797f0',
+        fontWeight: 'bold',
     },
     likeContainer: {
         alignItems: 'center',

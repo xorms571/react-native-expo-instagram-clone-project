@@ -131,84 +131,94 @@ export default function PostCard({ post }: PostCardProps) {
         </View>
       </View>
 
-      {/* Likes Count */}
-      {likeCount > 0 && (
-        <View style={styles.likesContainer}>
-          <ThemedText type="defaultSemiBold">{likeCount} {likeCount === 1 ? 'like' : 'likes'}</ThemedText>
-        </View>
-      )}
-
-      {/* Caption */}
-      <View style={styles.captionContainer}>
-        <ThemedText>
-          <ThemedText type="defaultSemiBold">{username}</ThemedText>
-          {' '}
-          {post.caption}
-        </ThemedText>
-        <Text style={styles.timestamp}>{new Date(post.created_at).toLocaleDateString()}</Text>
-      </View>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: 'white',
-    marginBottom: 10,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 12,
-  },
-  headerUser: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatar: {
-    width: 35,
-    height: 35,
-    borderRadius: 17.5,
-    marginRight: 10,
-  },
-  followButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#3797f0',
-    borderRadius: 8,
-  },
-  disabledButton: {
-    backgroundColor: '#dbdbdb',
-  },
-  followButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  postImage: {
-    width: '100%',
-    aspectRatio: 1 / 1, // Square images like Instagram
-  },
-  actionBar: {
-    flexDirection: 'row',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  action: {
-    marginRight: 12,
-  },
-  likesContainer: {
-    paddingHorizontal: 12,
-    paddingBottom: 8,
-  },
-  captionContainer: {
-    paddingHorizontal: 12,
-    paddingBottom: 12,
-  },
-  timestamp: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 4,
-  }
-});
-
+            {/* Likes Count */}
+            {likeCount > 0 && (
+              <View style={styles.likesContainer}>
+                <ThemedText type="defaultSemiBold">{likeCount} {likeCount === 1 ? 'like' : 'likes'}</ThemedText>
+              </View>
+            )}
+      
+            {/* Caption */}
+            <View style={styles.captionContainer}>
+              <ThemedText>
+                <ThemedText type="defaultSemiBold">{username}</ThemedText>
+                {' '}
+                {post.caption}
+              </ThemedText>
+              {post.comment_count > 0 && (
+                  <Link href={`/comments/${post.id}` as any} style={styles.commentsLink}>
+                      <Text style={styles.commentsLinkText}>View all {post.comment_count} comments</Text>
+                  </Link>
+              )}
+              <Text style={styles.timestamp}>{new Date(post.created_at).toLocaleDateString()}</Text>
+            </View>
+          </View>
+        );
+      }
+      
+      const styles = StyleSheet.create({
+        container: {
+          backgroundColor: 'white',
+          marginBottom: 10,
+        },
+        header: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: 12,
+        },
+        headerUser: {
+          flexDirection: 'row',
+          alignItems: 'center',
+        },
+        avatar: {
+          width: 35,
+          height: 35,
+          borderRadius: 17.5,
+          marginRight: 10,
+        },
+        followButton: {
+          paddingHorizontal: 12,
+          paddingVertical: 6,
+          backgroundColor: '#3797f0',
+          borderRadius: 8,
+        },
+        disabledButton: {
+          backgroundColor: '#dbdbdb',
+        },
+        followButtonText: {
+          color: 'white',
+          fontWeight: 'bold',
+        },
+        postImage: {
+          width: '100%',
+          aspectRatio: 1 / 1, // Square images like Instagram
+        },
+        actionBar: {
+          flexDirection: 'row',
+          paddingVertical: 8,
+          paddingHorizontal: 12,
+        },
+        action: {
+          marginRight: 12,
+        },
+        likesContainer: {
+          paddingHorizontal: 12,
+          paddingBottom: 8,
+        },
+        captionContainer: {
+          paddingHorizontal: 12,
+          paddingBottom: 12,
+        },
+        commentsLink: {
+          marginTop: 4,
+        },
+        commentsLinkText: {
+          color: '#999',
+        },
+        timestamp: {
+            fontSize: 12,
+            color: '#999',
+            marginTop: 4,
+        }
+      });
