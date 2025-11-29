@@ -37,9 +37,9 @@ export default function PostCard({ post }: PostCardProps) {
         <View style={styles.action}>
             <Ionicons name="heart-outline" size={28} color="black" />
         </View>
-        <View style={styles.action}>
+        <Link href={`/comments/${post.id}` as any} style={styles.action}>
             <Ionicons name="chatbubble-outline" size={26} color="black" />
-        </View>
+        </Link>
         <View style={styles.action}>
             <Ionicons name="send-outline" size={26} color="black" />
         </View>

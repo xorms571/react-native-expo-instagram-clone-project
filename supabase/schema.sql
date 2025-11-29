@@ -85,3 +85,31 @@ DROP POLICY IF EXISTS "Allow public read access to posts bucket" ON storage.obje
 CREATE POLICY "Allow public read access to posts bucket"
 ON storage.objects FOR SELECT
 USING (bucket_id = 'posts');
+
+-- 6. "comments" 테이블
+CREATE TABLE IF NOT EXISTS public.comments (
+    id uuid NOT NULL DEFAULT gen_random_uuid(),
+    post_id uuid NOT NULL REFERENCES public.posts(id) ON DELETE CASCADE,
+    user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    content text NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    CONSTRAINT comments_pkey PRIMARY KEY (id)
+);
+
+-- comments 테이블을 위한 RLS
+ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow authenticated users to view all comments" ON public.comments;
+CREATE POLICY "Allow authenticated users to view all comments" ON public.comments
+  FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Allow authenticated users to insert their own comments" ON public.comments;
+CREATE POLICY "Allow authenticated users to insert their own comments" ON public.comments
+  FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can update their own comments." ON public.comments;
+CREATE POLICY "Users can update their own comments." ON public.comments
+  FOR UPDATE TO authenticated USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can delete their own comments." ON public.comments;
+CREATE POLICY "Users can delete their own comments." ON public.comments
+  FOR DELETE TO authenticated USING (auth.uid() = user_id);

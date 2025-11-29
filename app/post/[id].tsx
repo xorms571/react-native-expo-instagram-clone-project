@@ -78,7 +78,7 @@ export default function PostDetailScreen() {
 
     return (
         <View style={styles.container}>
-            <PostCard post={post} />
+            {post && <PostCard post={post} />}
             {isOwner && (
                 <View style={styles.actionsContainer}>
                     <Link href={`/post/edit/${post.id}` as any} asChild>
