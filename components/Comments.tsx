@@ -17,6 +17,7 @@ import {
 
 import { useAuth } from '@/providers/AuthProvider';
 import { supabase } from '@/utils/supabase';
+import { Link } from 'expo-router';
 import { ThemedText } from './themed-text';
 
 // TYPES
@@ -125,7 +126,9 @@ const CommentItem = ({ comment, onReply, onDelete, onUpdate }: { comment: Commen
 
     return (
         <View style={[styles.commentContainer, { marginLeft: comment.level * 20 }, isDark && styles.darkCommentContainer]}>
-            <Image source={{ uri: avatarUrl }} style={styles.commentAvatar} />
+            <Link href={`/profile/${comment.user_id}` as any} asChild>
+                <Image source={{ uri: avatarUrl }} style={styles.commentAvatar} />
+            </Link>
             <View style={styles.commentTextContainer}>
                 {isEditing ? (
                     <>
@@ -138,7 +141,7 @@ const CommentItem = ({ comment, onReply, onDelete, onUpdate }: { comment: Commen
                 ) : (
                     <>
                         <ThemedText>
-                            <ThemedText type="defaultSemiBold">{username}</ThemedText> {comment.content}
+                            <Link href={`/profile/${comment.user_id}` as any} asChild><ThemedText type="defaultSemiBold">{username}</ThemedText></Link> {comment.content}
                         </ThemedText>
                         <View style={styles.commentActions}>
                             <ThemedText style={styles.commentTimestamp}>{new Date(comment.created_at).toLocaleDateString()}</ThemedText>
