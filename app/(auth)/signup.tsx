@@ -1,3 +1,5 @@
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
 import { supabase } from '@/utils/supabase';
 import { Link, router } from 'expo-router';
 import React, { useState } from 'react';
@@ -37,8 +39,8 @@ export default function SignUpScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Create Account</Text>
+    <ThemedView style={styles.container}>
+      <ThemedText style={styles.header}>Create Account</ThemedText>
       <TextInput
         style={styles.input}
         onChangeText={setEmail}
@@ -78,12 +80,12 @@ export default function SignUpScreen() {
         {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Sign Up</Text>}
       </TouchableOpacity>
       <View style={styles.footer}>
-        <Text style={styles.footerText}>Already have an account?</Text>
+        <ThemedText style={styles.footerText}>Already have an account?</ThemedText>
         <Link href="/login">
             <Text style={styles.linkText}> Log in.</Text>
         </Link>
       </View>
-    </View>
+    </ThemedView>
   );
 }
 
@@ -92,7 +94,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     padding: 24,
-    backgroundColor: '#fff',
   },
   header: {
     fontSize: 40,
@@ -100,6 +101,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 40,
     fontFamily: 'Cochin',
+    lineHeight: 45
   },
   input: {
     backgroundColor: '#fafafa',

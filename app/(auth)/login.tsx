@@ -1,7 +1,9 @@
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
 import { supabase } from '@/utils/supabase';
-import React, { useState } from 'react';
-import { Alert, StyleSheet, View, TextInput, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Link } from 'expo-router';
+import React, { useState } from 'react';
+import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -20,8 +22,8 @@ export default function LoginScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Bigrootagram</Text>
+    <ThemedView style={styles.container}>
+      <ThemedText style={styles.header}>Bigrootagram</ThemedText>
       <TextInput
         style={styles.input}
         onChangeText={setEmail}
@@ -43,13 +45,13 @@ export default function LoginScreen() {
       <TouchableOpacity style={styles.button} onPress={signInWithEmail} disabled={loading}>
         {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Log In</Text>}
       </TouchableOpacity>
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>Don't have an account?</Text>
+      <ThemedView style={styles.footer}>
+        <ThemedText style={styles.footerText}>Don't have an account?</ThemedText>
         <Link href="/signup">
-            <Text style={styles.linkText}> Sign up.</Text>
+            <ThemedText style={styles.linkText}> Sign up.</ThemedText>
         </Link>
-      </View>
-    </View>
+      </ThemedView>
+    </ThemedView>
   );
 }
 
@@ -58,7 +60,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     padding: 24,
-    backgroundColor: '#fff',
   },
   header: {
     fontSize: 40,
@@ -66,6 +67,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 40,
     fontFamily: 'Cochin', // A more stylistic font
+    lineHeight: 45
   },
   input: {
     backgroundColor: '#fafafa',
