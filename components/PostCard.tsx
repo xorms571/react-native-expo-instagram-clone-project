@@ -11,9 +11,10 @@ import { ThemedView } from './themed-view';
 
 type PostCardProps = {
   post: Post;
+  showComments?: boolean
 };
 
-export default function PostCard({ post }: PostCardProps) {
+export default function PostCard({ post, showComments = true }: PostCardProps) {
   const { user } = useAuth();
   const router = useRouter();
   const colorScheme = useColorScheme();
@@ -176,9 +177,9 @@ export default function PostCard({ post }: PostCardProps) {
         <TouchableOpacity onPress={handleLike} style={styles.action}>
           <Ionicons name={isLiked ? "heart" : "heart-outline"} size={28} color='red' />
         </TouchableOpacity>
-        <Link href={`/comments/${post.id}` as any} style={styles.action}>
+        {showComments && <Link href={`/comments/${post.id}` as any} style={styles.action}>
           <Ionicons name="chatbubble-outline" size={26} color={colorScheme === 'dark' ? "gray" : "black"} />
-        </Link>
+        </Link>}
         <ThemedView style={styles.action}>
           <Ionicons name="send-outline" size={26} color={colorScheme === 'dark' ? "gray" : "black"} />
         </ThemedView>
@@ -198,7 +199,7 @@ export default function PostCard({ post }: PostCardProps) {
           {' '}
           {post.caption}
         </ThemedText>
-        {post.comment_count > 0 && (
+        {showComments && post.comment_count > 0 && (
           <Link href={`/comments/${post.id}` as any} style={styles.commentsLink}>
             <Text style={styles.commentsLinkText}>View all {post.comment_count} comments</Text>
           </Link>

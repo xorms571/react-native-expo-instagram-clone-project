@@ -1,9 +1,11 @@
+import Comments from '@/components/Comments';
 import PostCard from '@/components/PostCard';
+import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/providers/AuthProvider';
 import { supabase } from '@/utils/supabase';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View, Text } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text } from 'react-native';
 import { Post } from '../(tabs)';
 
 export default function PostDetailScreen() {
@@ -29,7 +31,8 @@ export default function PostDetailScreen() {
 
         if (error) {
             setError(error.message);
-        } else {
+        }
+        else {
             setPost(data as any);
         }
         setLoading(false);
@@ -44,21 +47,27 @@ export default function PostDetailScreen() {
     }
 
     return (
-        <View style={styles.container}>
-            {post && <PostCard post={post} />}
-        </View>
+        <ThemedView style={styles.container}>
+            <ScrollView>
+                <PostCard post={post} showComments={false} />
+                <Comments postId={id} />
+            </ScrollView>
+        </ThemedView>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: 'white',
-        padding: 10,
     },
     centered: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    divider: {
+        borderBottomColor: '#eee',
+        borderBottomWidth: 1,
+        marginVertical: 10,
     },
 });
