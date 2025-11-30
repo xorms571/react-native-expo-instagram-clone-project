@@ -1,9 +1,11 @@
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/providers/AuthProvider';
 import { supabase } from '@/utils/supabase';
 import { Image } from 'expo-image';
 import { Link, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 
 type Post = {
   id: string;
@@ -23,10 +25,10 @@ type ProfileData = {
 };
 
 const StatItem = ({ label, value }: { label: string; value: string | number }) => (
-    <View style={styles.statItem}>
-        <Text style={styles.statValue}>{value}</Text>
-        <Text style={styles.statLabel}>{label}</Text>
-    </View>
+    <ThemedView style={styles.statItem}>
+        <ThemedText style={styles.statValue}>{value}</ThemedText>
+        <ThemedText style={styles.statLabel}>{label}</ThemedText>
+    </ThemedView>
 );
 
 export default function UserProfileScreen() {
@@ -134,26 +136,26 @@ export default function UserProfileScreen() {
     const imageSize = Dimensions.get('window').width / numColumns;
   
     const renderHeader = () => (
-        <View style={styles.headerContainer}>
-            <View style={styles.topRow}>
+        <ThemedView style={styles.headerContainer}>
+            <ThemedView style={styles.topRow}>
                 <Image
                     source={{ uri: profile.avatar_url || `https://i.pravatar.cc/150?u=${profile.id}` }}
                     style={styles.avatar}
                 />
-                <View style={styles.statsContainer}>
+                <ThemedView style={styles.statsContainer}>
                     <StatItem value={profile.post_count} label="Posts" />
                     <StatItem value={followerCount} label="Followers" />
                     <StatItem value={profile.following_count} label="Following" />
-                </View>
-            </View>
-            <View style={styles.bioContainer}>
-                <Text style={styles.username}>{profile.full_name || profile.username}</Text>
-            </View>
-            <View style={styles.buttonContainer}>
+                </ThemedView>
+            </ThemedView>
+            <ThemedView style={styles.bioContainer}>
+                <ThemedText style={styles.username}>{profile.full_name || profile.username}</ThemedText>
+            </ThemedView>
+            <ThemedView style={styles.buttonContainer}>
                 {isOwnProfile ? (
                     <Link href="/profile/edit" asChild>
                         <TouchableOpacity style={styles.editButton}>
-                            <Text style={styles.editButtonText}>Edit Profile</Text>
+                            <ThemedText style={styles.editButtonText}>Edit Profile</ThemedText>
                         </TouchableOpacity>
                     </Link>
                 ) : (
@@ -162,17 +164,17 @@ export default function UserProfileScreen() {
                         onPress={handleFollowToggle}
                         disabled={isTogglingFollow}
                     >
-                        <Text style={[styles.editButtonText, isFollowing && styles.followingButtonText]}>
+                        <ThemedText style={[styles.editButtonText, isFollowing && styles.followingButtonText]}>
                             {isFollowing ? 'Following' : 'Follow'}
-                        </Text>
+                        </ThemedText>
                     </TouchableOpacity>
                 )}
-            </View>
-        </View>
+            </ThemedView>
+        </ThemedView>
     );
 
     return (
-        <View style={styles.container}>
+        <ThemedView style={styles.container}>
             <FlatList
                 data={posts}
                 numColumns={numColumns}
@@ -190,14 +192,13 @@ export default function UserProfileScreen() {
                 ListHeaderComponent={renderHeader}
                 showsVerticalScrollIndicator={false}
             />
-        </View>
+        </ThemedView>
     );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white',
   },
   centered: {
     flex: 1,
@@ -231,7 +232,6 @@ const styles = StyleSheet.create({
   },
   statLabel: {
       fontSize: 14,
-      color: '#333',
   },
   bioContainer: {
       marginTop: 10,
@@ -259,15 +259,16 @@ const styles = StyleSheet.create({
       color: 'white',
   },
   followingButton: {
-      backgroundColor: 'white',
+      backgroundColor: '#eee'
   },
   followingButtonText: {
-      color: 'black',
+      color: '#333'
   },
   disabledButton: {
       opacity: 0.5,
   },
   imageContainer: {
       padding: 1,
+      color: '#333'
   },
 });

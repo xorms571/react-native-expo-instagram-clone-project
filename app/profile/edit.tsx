@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert, ActivityIndicator } from 'react-native';
-import { supabase } from '@/utils/supabase';
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/providers/AuthProvider';
+import { supabase } from '@/utils/supabase';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Button, StyleSheet, TextInput } from 'react-native';
 
 export default function EditProfileScreen() {
   const { user } = useAuth();
@@ -72,20 +74,20 @@ export default function EditProfileScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>Username</Text>
+    <ThemedView style={styles.container}>
+      <ThemedText style={styles.label}>Username</ThemedText>
       <TextInput
         style={styles.input}
         value={username}
         onChangeText={setUsername}
       />
-      <Text style={styles.label}>Full Name</Text>
+      <ThemedText style={styles.label}>Full Name</ThemedText>
       <TextInput
         style={styles.input}
         value={fullName}
         onChangeText={setFullName}
       />
-      <Text style={styles.label}>Website</Text>
+      <ThemedText style={styles.label}>Website</ThemedText>
       <TextInput
         style={styles.input}
         value={website}
@@ -93,7 +95,7 @@ export default function EditProfileScreen() {
         autoCapitalize="none"
       />
       <Button title="Update Profile" onPress={updateProfile} disabled={loading} />
-    </View>
+    </ThemedView>
   );
 }
 
@@ -101,7 +103,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: 'white',
   },
   centered: {
     flex: 1,

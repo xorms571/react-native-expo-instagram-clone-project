@@ -1,3 +1,4 @@
+import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/providers/AuthProvider'; // Import useAuth
 import { supabase } from '@/utils/supabase';
 import { Ionicons } from '@expo/vector-icons';
@@ -5,7 +6,7 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
 import 'react-native-get-random-values'; // Required for uuid to work with React Native
 import { v4 as uuidv4 } from 'uuid'; // For generating unique filenames
 
@@ -93,7 +94,7 @@ export default function UploadScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ThemedView style={styles.container}>
         {!imageUri ? (
             <TouchableOpacity style={styles.pickButton} onPress={pickImage}>
                 <Ionicons name="images-outline" size={60} color="#8e8e8e" />
@@ -118,7 +119,7 @@ export default function UploadScreen() {
                 </TouchableOpacity>
             </>
         )}
-    </View>
+    </ThemedView>
   );
 }
 
@@ -128,7 +129,6 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'white',
   },
   pickButton: {
       justifyContent: 'center',

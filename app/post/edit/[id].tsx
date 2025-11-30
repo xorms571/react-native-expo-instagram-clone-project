@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert, ActivityIndicator } from 'react-native';
-import { supabase } from '@/utils/supabase';
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/providers/AuthProvider';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { supabase } from '@/utils/supabase';
 import { Image } from 'expo-image';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Button, StyleSheet, TextInput } from 'react-native';
 
 export default function EditPostScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -64,9 +66,9 @@ export default function EditPostScreen() {
     }
 
     return (
-        <View style={styles.container}>
+        <ThemedView style={styles.container}>
             {post?.image_url && <Image source={{ uri: post.image_url }} style={styles.image} />}
-            <Text style={styles.label}>Caption</Text>
+            <ThemedText style={styles.label}>Caption</ThemedText>
             <TextInput
                 style={styles.input}
                 value={caption}
@@ -74,7 +76,7 @@ export default function EditPostScreen() {
                 multiline
             />
             <Button title="Update Post" onPress={updatePost} disabled={loading} />
-        </View>
+        </ThemedView>
     );
 }
 
@@ -82,7 +84,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 20,
-        backgroundColor: 'white',
     },
     centered: {
         flex: 1,
@@ -93,6 +94,7 @@ const styles = StyleSheet.create({
         width: '100%',
         aspectRatio: 1,
         marginBottom: 20,
+        backgroundColor: '#222'
     },
     label: {
         fontWeight: 'bold',

@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, ActivityIndicator, FlatList, Dimensions, TouchableOpacity } from 'react-native';
-import { supabase } from '@/utils/supabase';
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/providers/AuthProvider';
+import { supabase } from '@/utils/supabase';
 import { Image } from 'expo-image';
 import { Link, useFocusEffect } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
+import { ActivityIndicator, Dimensions, FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 type Post = {
   id: string;
@@ -24,8 +25,8 @@ type ProfileData = {
 
 const StatItem = ({ label, value }: { label: string; value: string | number }) => (
     <View style={styles.statItem}>
-        <Text style={styles.statValue}>{value}</Text>
-        <Text style={styles.statLabel}>{label}</Text>
+        <ThemedText style={styles.statValue}>{value}</ThemedText>
+        <ThemedText style={styles.statLabel}>{label}</ThemedText>
     </View>
 );
 
@@ -79,34 +80,34 @@ export default function ProfileScreen() {
   const imageSize = Dimensions.get('window').width / numColumns;
   
   const renderHeader = () => (
-    <View style={styles.headerContainer}>
-        <View style={styles.topRow}>
+    <ThemedView style={styles.headerContainer}>
+        <ThemedView style={styles.topRow}>
             <Image
                 source={{ uri: profile.avatar_url || `https://i.pravatar.cc/150?u=${user?.id}` }}
                 style={styles.avatar}
             />
-            <View style={styles.statsContainer}>
+            <ThemedView style={styles.statsContainer}>
                 <StatItem value={profile.post_count} label="Posts" />
                 <StatItem value={profile.follower_count} label="Followers" />
                 <StatItem value={profile.following_count} label="Following" />
-            </View>
-        </View>
-        <View style={styles.bioContainer}>
-            <Text style={styles.username}>{profile?.full_name || profile?.username || 'User'}</Text>
+            </ThemedView>
+        </ThemedView>
+        <ThemedView style={styles.bioContainer}>
+            <ThemedText style={styles.username}>{profile?.full_name || profile?.username || 'User'}</ThemedText>
             {/* Bio text could go here */}
-        </View>
-        <View style={styles.buttonContainer}>
+        </ThemedView>
+        <ThemedView style={styles.buttonContainer}>
             <Link href="/profile/edit" asChild>
                 <TouchableOpacity style={styles.editButton}>
-                    <Text style={styles.editButtonText}>Edit Profile</Text>
+                    <ThemedText style={styles.editButtonText}>Edit Profile</ThemedText>
                 </TouchableOpacity>
             </Link>
-        </View>
-    </View>
+        </ThemedView>
+    </ThemedView>
   );
 
   return (
-    <View style={styles.container}>
+    <ThemedView style={styles.container}>
         <FlatList
             data={posts}
             numColumns={numColumns}
@@ -124,14 +125,13 @@ export default function ProfileScreen() {
             ListHeaderComponent={renderHeader}
             showsVerticalScrollIndicator={false}
         />
-    </View>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white',
   },
   centered: {
     flex: 1,
@@ -165,7 +165,6 @@ const styles = StyleSheet.create({
   },
   statLabel: {
       fontSize: 14,
-      color: '#333',
   },
   bioContainer: {
       marginTop: 10,
@@ -186,12 +185,14 @@ const styles = StyleSheet.create({
       borderRadius: 6,
       borderWidth: 1,
       borderColor: '#dbdbdb',
+      backgroundColor: '#eee'
   },
   editButtonText: {
       fontWeight: 'bold',
-      color: 'black',
+      color: '#333'
   },
   imageContainer: {
       padding: 1,
+      backgroundColor: '#222'
   },
 });

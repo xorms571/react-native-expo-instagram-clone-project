@@ -247,6 +247,7 @@ const styles = StyleSheet.create({
   postImage: {
     width: '100%',
     aspectRatio: 1 / 1,
+    backgroundColor: '#222'
   },
   actionBar: {
     flexDirection: 'row',
