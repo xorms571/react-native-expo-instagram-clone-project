@@ -1,8 +1,9 @@
 import PostCard from '@/components/PostCard'; // Import the new component
+import { ThemedView } from '@/components/themed-view';
 import { supabase } from '@/utils/supabase';
 import { useFocusEffect } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Button, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Button, FlatList, RefreshControl, StyleSheet, Text, useColorScheme, View } from 'react-native';
 
 export type Post = {
   id: string;
@@ -11,8 +12,8 @@ export type Post = {
   created_at: string;
   user_id: string;
   profiles: {
-      username: string;
-      avatar_url: string;
+    username: string;
+    avatar_url: string;
   } | null;
   like_count: number;
   user_has_liked: boolean;
@@ -25,10 +26,11 @@ export default function FeedScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const colorScheme = useColorScheme();
+  const containerStyle = { backgroundColor: colorScheme === 'dark' ? '#111' : '#f0f0f0', }
   useFocusEffect(
     React.useCallback(() => {
-        fetchPosts();
+      fetchPosts();
     }, [])
   );
 
@@ -38,9 +40,9 @@ export default function FeedScreen() {
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-        setError("User not found.");
-        setLoading(false);
-        return
+      setError("User not found.");
+      setLoading(false);
+      return
     }
 
     const { data, error } = await supabase
@@ -79,28 +81,27 @@ export default function FeedScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <ThemedView style={[styles.container, containerStyle]}>
       <FlatList
         data={posts}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <PostCard post={item} />}
         ListEmptyComponent={
-          <View style={styles.centered}>
+          <ThemedView style={styles.centered}>
             <Text>No posts yet. Be the first to share!</Text>
-          </View>
+          </ThemedView>
         }
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       />
-    </View>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#f0f0f0', // A light grey background
+    flex: 1
   },
   centered: {
     flex: 1,
