@@ -48,7 +48,7 @@ function RootLayoutNav() {
         <Stack.Screen name="post/edit/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="profile/edit" options={{ headerShown: false }} />
         <Stack.Screen name="comments/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="likes" options={{ presentation: 'modal', headerShown: false }} />
+        <Stack.Screen name="users" options={{ presentation: 'modal', headerShown: false }} />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

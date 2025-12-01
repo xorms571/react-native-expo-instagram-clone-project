@@ -187,7 +187,7 @@ export default function PostCard({ post, showComments = true }: PostCardProps) {
 
       {/* Likes Count */}
       {likeCount > 0 && (
-        <Link href={{ pathname: "/likes", params: { post_id: post.id } }} asChild>
+        <Link href={{ pathname: "/users", params: { postId: post.id, mode: 'likes' } }} asChild>
           <TouchableOpacity>
             <ThemedView style={styles.likesContainer}>
               <ThemedText type="defaultSemiBold">{likeCount} {likeCount === 1 ? 'like' : 'likes'}</ThemedText>

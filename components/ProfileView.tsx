@@ -138,8 +138,16 @@ export default function ProfileView({ profileUserId }: ProfileViewProps) {
                 />
                 <ThemedView style={styles.statsContainer}>
                     <StatItem value={profile.post_count} label="Posts" />
-                    <StatItem value={followerCount} label="Followers" />
-                    <StatItem value={profile.following_count} label="Following" />
+                    <Link href={{ pathname: '/users', params: { profileUserId: profile.id, mode: 'followers' } }} asChild>
+                        <TouchableOpacity>
+                            <StatItem value={followerCount} label="Followers" />
+                        </TouchableOpacity>
+                    </Link>
+                    <Link href={{ pathname: '/users', params: { profileUserId: profile.id, mode: 'following' } }} asChild>
+                        <TouchableOpacity>
+                            <StatItem value={profile.following_count} label="Following" />
+                        </TouchableOpacity>
+                    </Link>
                 </ThemedView>
             </ThemedView>
             <ThemedView style={styles.bioContainer}>
