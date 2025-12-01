@@ -17,8 +17,9 @@ import {
 
 import { useAuth } from '@/providers/AuthProvider';
 import { supabase } from '@/utils/supabase';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { ThemedText } from './themed-text';
+import { ThemedView } from './themed-view';
 
 // TYPES
 export type Comment = {
@@ -284,11 +285,16 @@ export default function Comments({ postId, showTitle = false, standalone = false
     );
 
     return (
-        <View style={standalone ? styles.standaloneContainer : {}}>
-            {showTitle && <ThemedText type="title" style={[styles.title, isDark && styles.darkTitle]}>Comments</ThemedText>}
+        <ThemedView style={standalone ? styles.standaloneContainer : {}}>
+            {showTitle && <View style={[styles.header, isDark && styles.darkHeader]}>
+                <ThemedText type='title' style={styles.title}>Comments</ThemedText>
+                <TouchableOpacity onPress={() => router.back()} style={styles.closeButton}>
+                    <Ionicons name="close" size={24} color={isDark ? 'white' : 'black'} />
+                </TouchableOpacity>
+            </View>}
             {list}
             {input}
-        </View>
+        </ThemedView>
     );
 }
 
@@ -302,13 +308,24 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 20,
         fontWeight: 'bold',
-        textAlign: 'center',
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
         padding: 15,
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
+        position: 'relative',
     },
-    darkTitle: {
+    darkHeader: {
+        backgroundColor: '#1c1c1c',
         borderBottomColor: '#333',
+    },
+    closeButton: {
+        position: 'absolute',
+        right: 15,
+        padding: 5,
     },
     centered: {
         flex: 1,

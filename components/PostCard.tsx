@@ -187,9 +187,13 @@ export default function PostCard({ post, showComments = true }: PostCardProps) {
 
       {/* Likes Count */}
       {likeCount > 0 && (
-        <ThemedView style={styles.likesContainer}>
-          <ThemedText type="defaultSemiBold">{likeCount} {likeCount === 1 ? 'like' : 'likes'}</ThemedText>
-        </ThemedView>
+        <Link href={{ pathname: "/likes", params: { post_id: post.id } }} asChild>
+          <TouchableOpacity>
+            <ThemedView style={styles.likesContainer}>
+              <ThemedText type="defaultSemiBold">{likeCount} {likeCount === 1 ? 'like' : 'likes'}</ThemedText>
+            </ThemedView>
+          </TouchableOpacity>
+        </Link>
       )}
 
       {/* Caption */}
