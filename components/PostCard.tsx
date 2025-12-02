@@ -1,4 +1,4 @@
-import { Post } from '@/app/(tabs)/index';
+import { Post } from '@/hooks/usePosts';
 import { useAuth } from '@/providers/AuthProvider';
 import { supabase } from '@/utils/supabase';
 import { Ionicons } from '@expo/vector-icons';

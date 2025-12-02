@@ -1,5 +1,6 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { usePosts } from '@/hooks/usePosts';
 import { useAuth } from '@/providers/AuthProvider';
 import { supabase } from '@/utils/supabase';
 import { Image } from 'expo-image';
@@ -7,11 +8,6 @@ import { Link, useFocusEffect } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, Dimensions, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { StatItem } from './StatItem';
-
-type Post = {
-    id: string;
-    image_url: string;
-};
 
 type ProfileData = {
     id: string;
@@ -32,26 +28,26 @@ type ProfileViewProps = {
 export default function ProfileView({ profileUserId }: ProfileViewProps) {
     const { user: currentUser } = useAuth();
 
-    const [posts, setPosts] = useState<Post[]>([]);
     const [profile, setProfile] = useState<ProfileData | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [loadingProfile, setLoadingProfile] = useState(true);
 
     const [isFollowing, setIsFollowing] = useState(false);
     const [followerCount, setFollowerCount] = useState(0);
     const [isTogglingFollow, setIsTogglingFollow] = useState(false);
 
+    const { posts, loading: loadingPosts, onRefresh: onRefreshPosts } = usePosts(profileUserId);
+
     useFocusEffect(
         React.useCallback(() => {
             if (profileUserId && currentUser) {
                 fetchProfileData();
-                fetchUserPosts();
             }
         }, [profileUserId, currentUser])
     );
 
     async function fetchProfileData() {
         if (!profileUserId || !currentUser) return;
-        setLoading(true);
+        setLoadingProfile(true);
 
         const { data, error } = await supabase
             .rpc('get_profile_data', { p_profile_id: profileUserId, p_current_user_id: currentUser.id })
@@ -59,27 +55,12 @@ export default function ProfileView({ profileUserId }: ProfileViewProps) {
 
         if (error) {
             console.error('Error fetching profile data:', error);
-            setLoading(false);
+            setLoadingProfile(false);
         } else if (data) {
             setProfile(data as ProfileData);
             setIsFollowing((data as ProfileData).is_following);
             setFollowerCount((data as ProfileData).follower_count);
-            setLoading(false);
-        }
-    }
-
-    async function fetchUserPosts() {
-        if (!profileUserId) return;
-        const { data, error } = await supabase
-            .from('posts')
-            .select('id, image_url')
-            .eq('user_id', profileUserId)
-            .order('created_at', { ascending: false });
-
-        if (error) {
-            console.error('Error fetching user posts:', error);
-        } else {
-            setPosts(data || []);
+            setLoadingProfile(false);
         }
     }
 
@@ -120,8 +101,11 @@ export default function ProfileView({ profileUserId }: ProfileViewProps) {
         }
     };
 
+    const handleRefresh = async () => {
+        await Promise.all([fetchProfileData(), onRefreshPosts()]);
+    };
 
-    if (loading || !profile) {
+    if (loadingProfile || !profile) {
         return <ActivityIndicator style={styles.centered} />;
     }
 
@@ -182,22 +166,23 @@ export default function ProfileView({ profileUserId }: ProfileViewProps) {
                 numColumns={numColumns}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                    <TouchableOpacity style={styles.imageContainer}>
-                        <Image
-                            source={{ uri: item.image_url }}
-                            style={{ width: imageSize - 2, height: imageSize - 2 }}
-                        />
-                    </TouchableOpacity>
+                    <Link href={`/post/${item.id}` as any} asChild>
+                        <TouchableOpacity style={styles.imageContainer}>
+                            <Image
+                                source={{ uri: item.image_url }}
+                                style={{ width: imageSize - 2, height: imageSize - 2 }}
+                            />
+                        </TouchableOpacity>
+                    </Link>
                 )}
                 ListHeaderComponent={renderHeader}
                 showsVerticalScrollIndicator={false}
-                onRefresh={fetchProfileData}
-                refreshing={loading}
+                onRefresh={handleRefresh}
+                refreshing={loadingProfile || loadingPosts}
             />
         </ThemedView>
     );
 }
-
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -212,8 +197,8 @@ const styles = StyleSheet.create({
     },
     topRow: {
         flexDirection: 'row',
-        alignItems: 'center',
         justifyContent: 'space-between',
+        alignItems: 'center',
     },
     avatar: {
         width: 80,
@@ -247,32 +232,31 @@ const styles = StyleSheet.create({
     profileButtonText: {
         fontWeight: 'bold',
     },
+
+    // 버튼 3종류 통합 (edit / follow / following)
     editButton: {
         borderColor: '#dbdbdb',
         backgroundColor: '#eee',
-    },
-    editButtonText: {
-        color: '#333'
     },
     followButton: {
         borderColor: '#3797f0',
         backgroundColor: '#3797f0',
     },
-    followButtonText: {
-        color: 'white',
-    },
     followingButton: {
         borderColor: '#dbdbdb',
         backgroundColor: '#eee',
     },
-    followingButtonText: {
-        color: '#333'
-    },
+
+    editButtonText: { color: '#333' },
+    followButtonText: { color: 'white' },
+    followingButtonText: { color: '#333' },
+
     disabledButton: {
         opacity: 0.5,
     },
+
     imageContainer: {
         padding: 1,
-        backgroundColor: '#222'
+        backgroundColor: '#222',
     },
 });

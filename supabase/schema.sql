@@ -180,6 +180,48 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- 9. RPC function to get user posts with likes
+DROP FUNCTION IF EXISTS get_user_posts_with_likes(uuid, uuid);
+CREATE OR REPLACE FUNCTION get_user_posts_with_likes(p_user_id uuid, p_author_id uuid)
+RETURNS TABLE (
+    id uuid,
+    user_id uuid,
+    image_url text,
+    caption text,
+    created_at timestamptz,
+    profiles json,
+    like_count bigint,
+    user_has_liked boolean,
+    author_is_followed boolean,
+    comment_count bigint
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        p.id,
+        p.user_id,
+        p.image_url,
+        p.caption,
+        p.created_at,
+        json_build_object(
+            'username', pr.username,
+            'avatar_url', pr.avatar_url
+        ),
+        (SELECT COUNT(*) FROM public.likes l WHERE l.post_id = p.id) as like_count,
+        EXISTS(SELECT 1 FROM public.likes l WHERE l.post_id = p.id AND l.user_id = p_user_id) as user_has_liked,
+        EXISTS(SELECT 1 FROM public.followers f WHERE f.following_id = p.user_id AND f.follower_id = p_user_id) as author_is_followed,
+        (SELECT COUNT(*) FROM public.comments c WHERE c.post_id = p.id) as comment_count
+    FROM
+        public.posts p
+    JOIN
+        public.profiles pr ON p.user_id = pr.id
+    WHERE
+        p.user_id = p_author_id
+    ORDER BY
+        p.created_at DESC;
+END;
+$$ LANGUAGE plpgsql;
+
 -- 9. RPC function to get post details with likes
 DROP FUNCTION IF EXISTS get_post_details(uuid, uuid);
 CREATE OR REPLACE FUNCTION get_post_details(p_post_id uuid, p_user_id uuid)
