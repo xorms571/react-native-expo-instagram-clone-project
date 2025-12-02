@@ -166,7 +166,7 @@ export default function ProfileView({ profileUserId }: ProfileViewProps) {
                 numColumns={numColumns}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                    <Link href={`/post/${item.id}` as any} asChild>
+                    <Link href={{ pathname: `post/${item.id}` as any, params: { authorId: profileUserId } }} asChild>
                         <TouchableOpacity style={styles.imageContainer}>
                             <Image
                                 source={{ uri: item.image_url }}
