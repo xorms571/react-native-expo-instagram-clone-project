@@ -9,8 +9,8 @@ import { ActivityIndicator, Dimensions, FlatList, StyleSheet, TouchableOpacity }
 import { StatItem } from './StatItem';
 
 type Post = {
-  id: string;
-  image_url: string;
+    id: string;
+    image_url: string;
 };
 
 type ProfileData = {
@@ -128,7 +128,7 @@ export default function ProfileView({ profileUserId }: ProfileViewProps) {
     const isOwnProfile = currentUser?.id === profile.id;
     const numColumns = 3;
     const imageSize = Dimensions.get('window').width / numColumns;
-  
+
     const renderHeader = () => (
         <ThemedView style={styles.headerContainer}>
             <ThemedView style={styles.topRow}>
@@ -156,8 +156,8 @@ export default function ProfileView({ profileUserId }: ProfileViewProps) {
             <ThemedView style={styles.buttonContainer}>
                 {isOwnProfile ? (
                     <Link href="/profile/edit" asChild>
-                        <TouchableOpacity style={{...styles.profileButton, ...styles.editButton}}>
-                            <ThemedText style={{...styles.profileButtonText, ...styles.editButtonText}}>Edit Profile</ThemedText>
+                        <TouchableOpacity style={{ ...styles.profileButton, ...styles.editButton }}>
+                            <ThemedText style={{ ...styles.profileButtonText, ...styles.editButtonText }}>Edit Profile</ThemedText>
                         </TouchableOpacity>
                     </Link>
                 ) : (
@@ -182,14 +182,12 @@ export default function ProfileView({ profileUserId }: ProfileViewProps) {
                 numColumns={numColumns}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                    <Link href={`/post/${item.id}` as any} asChild>
-                        <TouchableOpacity style={styles.imageContainer}>
-                            <Image
-                                source={{ uri: item.image_url }}
-                                style={{ width: imageSize - 2, height: imageSize - 2 }}
-                            />
-                        </TouchableOpacity>
-                    </Link>
+                    <TouchableOpacity style={styles.imageContainer}>
+                        <Image
+                            source={{ uri: item.image_url }}
+                            style={{ width: imageSize - 2, height: imageSize - 2 }}
+                        />
+                    </TouchableOpacity>
                 )}
                 ListHeaderComponent={renderHeader}
                 showsVerticalScrollIndicator={false}
@@ -201,80 +199,80 @@ export default function ProfileView({ profileUserId }: ProfileViewProps) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerContainer: {
-      padding: 15,
-  },
-  topRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-  },
-  avatar: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-  },
-  statsContainer: {
-      flexDirection: 'row',
-      flex: 1,
-      justifyContent: 'space-around',
-  },
-  bioContainer: {
-      marginTop: 10,
-  },
-  username: {
-      fontWeight: 'bold',
-      fontSize: 16,
-  },
-  buttonContainer: {
-      flexDirection: 'row',
-      marginTop: 20,
-  },
-  profileButton: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: 8,
-      borderRadius: 6,
-      borderWidth: 1,
-  },
-  profileButtonText: {
-      fontWeight: 'bold',
-  },
-  editButton: {
-      borderColor: '#dbdbdb',
-      backgroundColor: '#eee',
-  },
-  editButtonText: {
-      color: '#333'
-  },
-  followButton: {
-      borderColor: '#3797f0',
-      backgroundColor: '#3797f0',
-  },
-  followButtonText: {
-      color: 'white',
-  },
-  followingButton: {
-      borderColor: '#dbdbdb',
-      backgroundColor: '#eee',
-  },
-  followingButtonText: {
-      color: '#333'
-  },
-  disabledButton: {
-      opacity: 0.5,
-  },
-  imageContainer: {
-      padding: 1,
-      backgroundColor: '#222'
-  },
+    container: {
+        flex: 1,
+    },
+    centered: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    headerContainer: {
+        padding: 15,
+    },
+    topRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    avatar: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+    },
+    statsContainer: {
+        flexDirection: 'row',
+        flex: 1,
+        justifyContent: 'space-around',
+    },
+    bioContainer: {
+        marginTop: 10,
+    },
+    username: {
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+    buttonContainer: {
+        flexDirection: 'row',
+        marginTop: 20,
+    },
+    profileButton: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 8,
+        borderRadius: 6,
+        borderWidth: 1,
+    },
+    profileButtonText: {
+        fontWeight: 'bold',
+    },
+    editButton: {
+        borderColor: '#dbdbdb',
+        backgroundColor: '#eee',
+    },
+    editButtonText: {
+        color: '#333'
+    },
+    followButton: {
+        borderColor: '#3797f0',
+        backgroundColor: '#3797f0',
+    },
+    followButtonText: {
+        color: 'white',
+    },
+    followingButton: {
+        borderColor: '#dbdbdb',
+        backgroundColor: '#eee',
+    },
+    followingButtonText: {
+        color: '#333'
+    },
+    disabledButton: {
+        opacity: 0.5,
+    },
+    imageContainer: {
+        padding: 1,
+        backgroundColor: '#222'
+    },
 });

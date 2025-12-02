@@ -166,11 +166,7 @@ export default function PostCard({ post, showComments = true }: PostCardProps) {
       )}
 
       {/* Post Image */}
-      <Link href={`/post/${post.id}` as any} asChild>
-        <TouchableOpacity>
-          <Image source={{ uri: post.image_url }} style={styles.postImage} contentFit="cover" />
-        </TouchableOpacity>
-      </Link>
+      <Image source={{ uri: post.image_url }} style={styles.postImage} contentFit="cover" />
 
       {/* Action Bar */}
       <ThemedView style={styles.actionBar}>
