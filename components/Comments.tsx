@@ -17,9 +17,8 @@ import {
 
 import { useAuth } from '@/providers/AuthProvider';
 import { supabase } from '@/utils/supabase';
-import { Link, router } from 'expo-router';
+import { Link } from 'expo-router';
 import { ThemedText } from './themed-text';
-import { ThemedView } from './themed-view';
 
 // TYPES
 export type Comment = {
@@ -168,14 +167,14 @@ const CommentItem = ({ comment, onReply, onDelete, onUpdate }: { comment: Commen
 };
 
 
-// MAIN REUSABLE COMPONENT
 type CommentsProps = {
     postId: string;
     showTitle?: boolean;
     standalone?: boolean;
+    onClose?: () => void;
 }
 
-export default function Comments({ postId, showTitle = false, standalone = false }: CommentsProps) {
+export default function Comments({ postId, showTitle = false, standalone = false, onClose }: CommentsProps) {
     const { user } = useAuth();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
@@ -237,64 +236,51 @@ export default function Comments({ postId, showTitle = false, standalone = false
         return <ActivityIndicator style={styles.centered} />;
     }
 
-    const list = (
-        <FlatList
-            data={comments}
-            renderItem={({ item }) => (
-                <CommentItem
-                    comment={item}
-                    onReply={setReplyingTo}
-                    onDelete={handleDeleteComment}
-                    onUpdate={fetchAndSetComments}
-                />
-            )}
-            keyExtractor={(item) => item.id}
-            style={standalone ? styles.standaloneList : {}}
-            ListEmptyComponent={<ThemedText style={styles.noCommentsText}>No comments yet. Be the first to comment!</ThemedText>}
-        />
-    );
+    return (
+        <View style={standalone ? styles.standaloneContainer : { flex: 1 }}>
+            <FlatList
+                data={comments}
+                renderItem={({ item }) => (
+                    <CommentItem
+                        comment={item}
+                        onReply={setReplyingTo}
+                        onDelete={handleDeleteComment}
+                        onUpdate={fetchAndSetComments}
+                    />
+                )}
+                keyExtractor={(item) => item.id}
+                style={standalone ? styles.standaloneList : { flex: 1 }}
+                ListEmptyComponent={<ThemedText style={styles.noCommentsText}>No comments yet. Be the first to comment!</ThemedText>}
+            />
 
-    const input = (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={standalone ? 90 : 0}
-        >
-            <View style={[styles.commentInputContainer, isDark && styles.darkCommentInputContainer]}>
-                {replyingTo && (
-                    <View style={styles.replyingToContainer}>
-                        <ThemedText style={styles.replyingToText}>Replying to {replyingTo.profiles?.username}</ThemedText>
-                        <TouchableOpacity onPress={() => setReplyingTo(null)}>
-                            <ThemedText style={styles.cancelReplyButton}>Cancel</ThemedText>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={standalone ? 90 : (Platform.OS === 'ios' ? 100 : 0)}
+            >
+                <View style={[styles.commentInputContainer, isDark && styles.darkCommentInputContainer]}>
+                    {replyingTo && (
+                        <View style={styles.replyingToContainer}>
+                            <ThemedText style={styles.replyingToText}>Replying to {replyingTo.profiles?.username}</ThemedText>
+                            <TouchableOpacity onPress={() => setReplyingTo(null)}>
+                                <ThemedText style={styles.cancelReplyButton}>Cancel</ThemedText>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                    <View style={styles.inputRow}>
+                        <TextInput
+                            style={[styles.commentInput, isDark && styles.darkCommentInput]}
+                            placeholder={replyingTo ? 'Add a reply...' : "Add a comment..."}
+                            placeholderTextColor={isDark ? '#bbb' : '#999'}
+                            value={newComment}
+                            onChangeText={setNewComment}
+                        />
+                        <TouchableOpacity onPress={addComment} style={styles.postButton}>
+                            <ThemedText style={styles.postButtonText}>Post</ThemedText>
                         </TouchableOpacity>
                     </View>
-                )}
-                <View style={styles.inputRow}>
-                    <TextInput
-                        style={[styles.commentInput, isDark && styles.darkCommentInput]}
-                        placeholder={replyingTo ? 'Add a reply...' : "Add a comment..."}
-                        placeholderTextColor={isDark ? '#bbb' : '#999'}
-                        value={newComment}
-                        onChangeText={setNewComment}
-                    />
-                    <TouchableOpacity onPress={addComment} style={styles.postButton}>
-                        <ThemedText style={styles.postButtonText}>Post</ThemedText>
-                    </TouchableOpacity>
                 </View>
-            </View>
-        </KeyboardAvoidingView>
-    );
-
-    return (
-        <ThemedView style={standalone ? styles.standaloneContainer : {}}>
-            {showTitle && <View style={[styles.header, isDark && styles.darkHeader]}>
-                <ThemedText type='title' style={styles.title}>Comments</ThemedText>
-                <TouchableOpacity onPress={() => router.back()} style={styles.closeButton}>
-                    <Ionicons name="close" size={24} color={isDark ? 'white' : 'black'} />
-                </TouchableOpacity>
-            </View>}
-            {list}
-            {input}
-        </ThemedView>
+            </KeyboardAvoidingView>
+        </View>
     );
 }
 

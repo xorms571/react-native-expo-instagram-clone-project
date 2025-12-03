@@ -10,6 +10,7 @@ import { Alert, StyleSheet, Text, TouchableOpacity, useColorScheme } from 'react
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 import { UserListItemData } from './UserListItem';
+import { CommentSheet } from './CommentSheet';
 import { UserListSheet } from './UserListSheet';
 
 type PostCardProps = {
@@ -32,9 +33,14 @@ export default function PostCard({ post, showComments = true }: PostCardProps) {
   const [isTogglingFollow, setIsTogglingFollow] = useState(false);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
 
-  const [isSheetVisible, setIsSheetVisible] = useState(false);
+  // State for UserListSheet (Likes)
+  const [isUserListSheetVisible, setIsUserListSheetVisible] = useState(false);
   const [sheetData, setSheetData] = useState<UserListItemData[]>([]);
   const [isSheetLoading, setIsSheetLoading] = useState(false);
+
+  // State for CommentSheet
+  const [isCommentSheetVisible, setIsCommentSheetVisible] = useState(false);
+
 
   const fetchLikesData = useCallback(async () => {
     if (!user) return;
@@ -67,12 +73,12 @@ export default function PostCard({ post, showComments = true }: PostCardProps) {
   }, [post.id, user]);
 
   const openLikeList = () => {
-    setIsSheetVisible(true);
+    setIsUserListSheetVisible(true);
     fetchLikesData();
   };
 
   const closeLikeList = () => {
-    setIsSheetVisible(false);
+    setIsUserListSheetVisible(false);
     setSheetData([]);
   };
 
@@ -220,9 +226,9 @@ export default function PostCard({ post, showComments = true }: PostCardProps) {
         <TouchableOpacity onPress={handleLike} style={styles.action}>
           <Ionicons name={isLiked ? "heart" : "heart-outline"} size={28} color='red' />
         </TouchableOpacity>
-        {showComments && <Link href={`/comments/${post.id}` as any} style={styles.action}>
+        {showComments && <TouchableOpacity onPress={() => setIsCommentSheetVisible(true)} style={styles.action}>
           <Ionicons name="chatbubble-outline" size={26} color={colorScheme === 'dark' ? "gray" : "black"} />
-        </Link>}
+        </TouchableOpacity>}
         <ThemedView style={styles.action}>
           <Ionicons name="send-outline" size={26} color={colorScheme === 'dark' ? "gray" : "black"} />
         </ThemedView>
@@ -243,19 +249,24 @@ export default function PostCard({ post, showComments = true }: PostCardProps) {
           {post.caption}
         </ThemedText>
         {showComments && post.comment_count > 0 && (
-          <Link href={`/comments/${post.id}` as any} style={styles.commentsLink}>
+          <TouchableOpacity onPress={() => setIsCommentSheetVisible(true)} style={styles.commentsLink}>
             <Text style={styles.commentsLinkText}>View all {post.comment_count} comments</Text>
-          </Link>
+          </TouchableOpacity>
         )}
         <Text style={styles.timestamp}>{new Date(post.created_at).toLocaleDateString()}</Text>
       </ThemedView>
 
       <UserListSheet
-        visible={isSheetVisible}
+        visible={isUserListSheetVisible}
         users={sheetData}
         loading={isSheetLoading}
         onClose={closeLikeList}
       />
+      {showComments && <CommentSheet
+        postId={post.id}
+        visible={isCommentSheetVisible}
+        onClose={() => setIsCommentSheetVisible(false)}
+      />}
     </ThemedView>
   );
 }
