@@ -1,10 +1,9 @@
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/providers/AuthProvider';
 import { supabase } from '@/utils/supabase';
 import { Link } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, useColorScheme, View } from 'react-native';
+import { ThemedText } from './themed-text';
 
 export type UserListItemData = {
   user_id: string;
@@ -53,7 +52,7 @@ export const UserListItem = ({ item }: { item: UserListItemData }) => {
   };
 
   return (
-    <ThemedView style={styles.userContainer}>
+    <View style={styles.userContainer}>
       <Link href={`/profile/${item.user_id}`} asChild>
         <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 10 }}>
             <Image
@@ -69,7 +68,7 @@ export const UserListItem = ({ item }: { item: UserListItemData }) => {
           <Text style={styles.followButtonText}>{isFollowing ? 'Following' : 'Follow'}</Text>
         </TouchableOpacity>
       )}
-    </ThemedView>
+    </View>
   );
 };
 

@@ -1,13 +1,16 @@
+import { useThemeColor } from '@/hooks/use-theme-color';
 import { Post } from '@/hooks/usePosts';
 import { useAuth } from '@/providers/AuthProvider';
 import { supabase } from '@/utils/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Link, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, useColorScheme } from 'react-native';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
+import { UserListItemData } from './UserListItem';
+import { UserListSheet } from './UserListSheet';
 
 type PostCardProps = {
   post: Post;
@@ -18,6 +21,7 @@ export default function PostCard({ post, showComments = true }: PostCardProps) {
   const { user } = useAuth();
   const router = useRouter();
   const colorScheme = useColorScheme();
+  const backgroundColor = useThemeColor({}, 'background');
 
   const username = post.profiles?.username || 'unknown';
   const avatarUrl = post.profiles?.avatar_url || `https://i.pravatar.cc/150?u=${post.user_id}`;
@@ -28,13 +32,56 @@ export default function PostCard({ post, showComments = true }: PostCardProps) {
   const [isTogglingFollow, setIsTogglingFollow] = useState(false);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
 
+  const [isSheetVisible, setIsSheetVisible] = useState(false);
+  const [sheetData, setSheetData] = useState<UserListItemData[]>([]);
+  const [isSheetLoading, setIsSheetLoading] = useState(false);
+
+  const fetchLikesData = useCallback(async () => {
+    if (!user) return;
+    setIsSheetLoading(true);
+
+    const { data, error } = await supabase
+      .from('likes')
+      .select(`user_id, profiles (id, username, avatar_url)`)
+      .eq('post_id', post.id);
+
+    if (error) {
+      console.error(`Error fetching likes:`, error);
+      setSheetData([]);
+    } else if (data) {
+      const { data: followingData } = await supabase
+        .from('followers')
+        .select('following_id')
+        .eq('follower_id', user.id);
+
+      const followingSet = new Set(followingData?.map(f => f.following_id) || []);
+
+      const formattedData: UserListItemData[] = data.map((item: any) => ({
+        user_id: item.user_id,
+        profiles: item.profiles,
+        is_following: followingSet.has(item.user_id),
+      }));
+      setSheetData(formattedData);
+    }
+    setIsSheetLoading(false);
+  }, [post.id, user]);
+
+  const openLikeList = () => {
+    setIsSheetVisible(true);
+    fetchLikesData();
+  };
+
+  const closeLikeList = () => {
+    setIsSheetVisible(false);
+    setSheetData([]);
+  };
+
   const handleLike = async () => {
     if (!user) return;
 
     const currentlyLiked = isLiked;
     const currentLikeCount = likeCount;
 
-    // Optimistic update
     setIsLiked(!currentlyLiked);
     setLikeCount(currentLikeCount + (currentlyLiked ? -1 : 1));
 
@@ -183,13 +230,9 @@ export default function PostCard({ post, showComments = true }: PostCardProps) {
 
       {/* Likes Count */}
       {likeCount > 0 && (
-        <Link href={{ pathname: "/users", params: { postId: post.id, mode: 'likes' } }} asChild>
-          <TouchableOpacity>
-            <ThemedView style={styles.likesContainer}>
-              <ThemedText type="defaultSemiBold">{likeCount} {likeCount === 1 ? 'like' : 'likes'}</ThemedText>
-            </ThemedView>
-          </TouchableOpacity>
-        </Link>
+        <TouchableOpacity onPress={openLikeList} style={[styles.likesContainer, { backgroundColor }]}>
+          <ThemedText type="defaultSemiBold">{likeCount} {likeCount === 1 ? 'like' : 'likes'}</ThemedText>
+        </TouchableOpacity>
       )}
 
       {/* Caption */}
@@ -206,6 +249,13 @@ export default function PostCard({ post, showComments = true }: PostCardProps) {
         )}
         <Text style={styles.timestamp}>{new Date(post.created_at).toLocaleDateString()}</Text>
       </ThemedView>
+
+      <UserListSheet
+        visible={isSheetVisible}
+        users={sheetData}
+        loading={isSheetLoading}
+        onClose={closeLikeList}
+      />
     </ThemedView>
   );
 }

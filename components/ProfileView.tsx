@@ -5,9 +5,11 @@ import { useAuth } from '@/providers/AuthProvider';
 import { supabase } from '@/utils/supabase';
 import { Image } from 'expo-image';
 import { Link, useFocusEffect } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Dimensions, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { StatItem } from './StatItem';
+import { UserListSheet } from './UserListSheet';
+import { UserListItemData } from './UserListItem';
 
 type ProfileData = {
     id: string;
@@ -25,6 +27,8 @@ type ProfileViewProps = {
     profileUserId: string;
 }
 
+type SheetMode = 'followers' | 'following';
+
 export default function ProfileView({ profileUserId }: ProfileViewProps) {
     const { user: currentUser } = useAuth();
 
@@ -35,6 +39,13 @@ export default function ProfileView({ profileUserId }: ProfileViewProps) {
     const [followerCount, setFollowerCount] = useState(0);
     const [isTogglingFollow, setIsTogglingFollow] = useState(false);
 
+    // --- State for UserListSheet ---
+    const [isSheetVisible, setIsSheetVisible] = useState(false);
+    const [sheetMode, setSheetMode] = useState<SheetMode>('followers');
+    const [sheetData, setSheetData] = useState<UserListItemData[]>([]);
+    const [isSheetLoading, setIsSheetLoading] = useState(false);
+    // --------------------------------
+
     const { posts, loading: loadingPosts, onRefresh: onRefreshPosts } = usePosts(profileUserId);
 
     useFocusEffect(
@@ -44,6 +55,65 @@ export default function ProfileView({ profileUserId }: ProfileViewProps) {
             }
         }, [profileUserId, currentUser])
     );
+
+    // --- Fetch logic for UserListSheet ---
+    const fetchSheetData = useCallback(async (mode: SheetMode) => {
+        if (!profileUserId || !currentUser) return;
+
+        setIsSheetLoading(true);
+
+        let query;
+        switch (mode) {
+            case 'followers':
+                query = supabase
+                    .from('followers')
+                    .select('profiles!inner!follower_id(id, username, avatar_url)')
+                    .eq('following_id', profileUserId);
+                break;
+            case 'following':
+                query = supabase
+                    .from('followers')
+                    .select('profiles!inner!following_id(id, username, avatar_url)')
+                    .eq('follower_id', profileUserId);
+                break;
+        }
+
+        const { data, error } = await query;
+        if (error) {
+            console.error(`Error fetching ${mode}:`, error);
+            setSheetData([]);
+        } else if (data) {
+            const { data: followingData } = await supabase
+                .from('followers')
+                .select('following_id')
+                .eq('follower_id', currentUser.id);
+
+            const followingSet = new Set(followingData?.map(f => f.following_id) || []);
+
+            const formattedData: UserListItemData[] = data.map((item: any) => ({
+                user_id: item.profiles.id,
+                profiles: item.profiles,
+                is_following: followingSet.has(item.profiles.id),
+            }));
+            setSheetData(formattedData);
+        }
+
+        setIsSheetLoading(false);
+    }, [profileUserId, currentUser]);
+
+
+    const openUserList = (mode: SheetMode) => {
+        setSheetMode(mode);
+        setIsSheetVisible(true);
+        fetchSheetData(mode);
+    };
+
+    const closeUserList = () => {
+        setIsSheetVisible(false);
+        setSheetData([]);
+    };
+    // -------------------------------------
+
 
     async function fetchProfileData() {
         if (!profileUserId || !currentUser) return;
@@ -122,16 +192,12 @@ export default function ProfileView({ profileUserId }: ProfileViewProps) {
                 />
                 <ThemedView style={styles.statsContainer}>
                     <StatItem value={profile.post_count} label="Posts" />
-                    <Link href={{ pathname: '/users', params: { profileUserId: profile.id, mode: 'followers' } }} asChild>
-                        <TouchableOpacity>
-                            <StatItem value={followerCount} label="Followers" />
-                        </TouchableOpacity>
-                    </Link>
-                    <Link href={{ pathname: '/users', params: { profileUserId: profile.id, mode: 'following' } }} asChild>
-                        <TouchableOpacity>
-                            <StatItem value={profile.following_count} label="Following" />
-                        </TouchableOpacity>
-                    </Link>
+                    <TouchableOpacity onPress={() => openUserList('followers')}>
+                        <StatItem value={followerCount} label="Followers" />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => openUserList('following')}>
+                        <StatItem value={profile.following_count} label="Following" />
+                    </TouchableOpacity>
                 </ThemedView>
             </ThemedView>
             <ThemedView style={styles.bioContainer}>
@@ -179,6 +245,12 @@ export default function ProfileView({ profileUserId }: ProfileViewProps) {
                 showsVerticalScrollIndicator={false}
                 onRefresh={handleRefresh}
                 refreshing={loadingProfile || loadingPosts}
+            />
+            <UserListSheet
+                visible={isSheetVisible}
+                users={sheetData}
+                loading={isSheetLoading}
+                onClose={closeUserList}
             />
         </ThemedView>
     );
